@@ -6,7 +6,7 @@
   }
   :dependencies [
     [mvc-works/skir "0.0.4"]
-    [respo/router "0.4.0"]
+    [cirru/edn "0.0.5"]
     [medley "1.2.0"]
   ]
   :builds {
