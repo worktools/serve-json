@@ -56,19 +56,16 @@
         (if (some? info)
           (case (:type info)
             :file
-              {:code 400,
-               :message "Unknown request",
-               :headers {:Content-Type "application/json"},
-               :body (let [mock-path (path/join js/process.env.PWD (:file info))]
-                 (if (fs/existsSync mock-path)
-                   {:code 200,
-                    :message "OK",
-                    :headers {:Content-Type "application/json"},
-                    :body (fs/readFileSync mock-path "utf8")}
-                   {:code 400,
-                    :message "File not found",
-                    :headers {:Content-Type "text/html"},
-                    :body (str mock-path " not found")}))}
+              (let [mock-path (path/join js/process.env.PWD (:file info))]
+                (if (fs/existsSync mock-path)
+                  {:code 200,
+                   :message "OK",
+                   :headers {:Content-Type "application/json"},
+                   :body (fs/readFileSync mock-path "utf8")}
+                  {:code 400,
+                   :message "Unknown request",
+                   :headers {:Content-Type "application/json"},
+                   :body (str mock-path " not found")}))
             {:code 400,
              :message "Unknown request",
              :headers {:Content-Type "application/json"},

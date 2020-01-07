@@ -5,13 +5,19 @@
     "clojars" {:url "https://mirrors.ustc.edu.cn/clojars/"}
   }
   :dependencies [
-    [mvc-works/skir "0.0.4"]
+    [mvc-works/skir "0.0.5-a1"]
     [cirru/edn "0.0.5"]
     [medley "1.2.0"]
   ]
   :builds {
     :app {
       :target :node-script, :output-to "target/server.js", :main app.main/main!
+      :release {
+        :output-to "dist/server.js"
+        :compiler-options {
+          :optimizations :simple
+        }
+      }
       :devtools {:after-load app.main/reload!}
     }
   }

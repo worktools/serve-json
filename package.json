@@ -1,7 +1,12 @@
 {
   "name": "@jimengio/serve-json",
-  "version": "0.0.1-a1",
+  "version": "0.0.1-a3",
+  "bin": {
+    "serve-json": "./dist/server.js"
+  },
   "scripts": {
+    "release": "yarn shadow-cljs release app",
+    "prepare": "yarn release",
     "watch": "yarn shadow-cljs watch app"
   },
   "main": "index.js",

@@ -4,9 +4,10 @@ Serve JSON
 
 ### Usage
 
-TODO
+![](https://img.shields.io/npm/v/@jimengio/serve-json.svg?style=flat-square)
 
 ```bash
+yarn global add @jimengio/serve-json
 serve-json config.edn
 ```
 

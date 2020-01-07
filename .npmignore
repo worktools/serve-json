@@ -1,0 +1,12 @@
+
+/target/
+/node_modules
+.cpcache/
+.shadow-cljs/
+
+.nrepl-port
+
+/json/
+/src
+calcit.cirru
+shadow-cljs.edn
