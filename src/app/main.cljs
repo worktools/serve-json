@@ -46,11 +46,38 @@
   (let [routes (:routes @*configs)
         segments (split-path (:url req))
         that-rule (find-match-rule segments routes)]
-    (println "find rule" that-rule)
-    {:code 200,
-     :message "OK",
-     :headers {:Content-Type "application/json"},
-     :body (js/JSON.stringify (clj->js routes) nil 2)}))
+    (comment println "find rule" that-rule)
+    (if (nil? that-rule)
+      {:code 400,
+       :message "OK",
+       :headers {:Content-Type "application/json"},
+       :body (str "No matching path for " (:url req))}
+      (let [info (get that-rule (:method req))]
+        (if (some? info)
+          (case (:type info)
+            :file
+              {:code 400,
+               :message "Unknown request",
+               :headers {:Content-Type "application/json"},
+               :body (let [mock-path (path/join js/process.env.PWD (:file info))]
+                 (if (fs/existsSync mock-path)
+                   {:code 200,
+                    :message "OK",
+                    :headers {:Content-Type "application/json"},
+                    :body (fs/readFileSync mock-path "utf8")}
+                   {:code 400,
+                    :message "File not found",
+                    :headers {:Content-Type "text/html"},
+                    :body (str mock-path " not found")}))}
+            {:code 400,
+             :message "Unknown request",
+             :headers {:Content-Type "application/json"},
+             :body (clj->js
+                    {:code 400, :message "Unknown info", :rule that-rule, :info info})})
+          {:code 400,
+           :message "Unknown request",
+           :headers {:Content-Type "application/json"},
+           :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})})))))
 
 (defn start-server! []
   (comment println @*configs)
