@@ -4,9 +4,25 @@
             ["fs" :as fs]
             ["path" :as path]
             [cirru-edn.core :refer [parse]]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [cljs.reader :refer [read-string]]))
 
-(defn load-config! [] (parse (fs/readFileSync "config.cirru" "utf8")))
+(defn load-config! []
+  (let [config-path (or (aget js/process.argv 2) "config.edn")]
+    (when-not (fs/existsSync config-path)
+      (println "Found no config" config-path)
+      (.exit js/process 1))
+    (println "Loading config from" config-path)
+    (let [ext (path/extname config-path)
+          content (fs/readFileSync config-path "utf8")
+          result (case ext
+                   ".cirru" (parse content)
+                   ".edn" (read-string content )
+                   ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
+                   (do nil))]
+      (if (nil? result)
+        (do (println "Unknown config file" config-path) (.exit js/process 1))
+        (do (println result) result)))))
 
 (defonce *configs (atom (load-config!)))
 
