@@ -48,33 +48,49 @@
 
 (defn handle-request! [req]
   (let [routes (:routes @*configs)
-        segments (split-path (:url req))
+        pathname (:url req)
+        segments (split-path pathname)
         that-rule (find-match-rule segments routes)
         info (get that-rule (:method req))
         file-type (:type info)]
-    (comment println "find rule" that-rule)
+    (comment println "find rule" pathname that-rule)
     (cond
-      (nil? that-rule)
-        {:code 400,
-         :message "Not matching",
+      (= pathname "/")
+        {:code 200,
+         :message "OK",
          :headers html-header,
-         :body (str "No matching path for " (:url req))}
+         :body "This is a JSON mocking server."}
+      (= pathname "/favicon.ico")
+        {:code 404, :message "No", :headers html-header, :body "No image"}
+      (nil? that-rule)
+        (do
+         (println "404" pathname)
+         {:code 400,
+          :message "Not matching",
+          :headers html-header,
+          :body (str "No matching path for " pathname)})
       (= :file file-type)
         (let [mock-path (path/join js/process.env.PWD (:file info))]
           (if (fs/existsSync mock-path)
-            {:code 200,
-             :message "OK",
-             :headers json-header,
-             :body (fs/readFileSync mock-path "utf8")}
-            {:code 400,
-             :message "Unknown request",
-             :headers html-header,
-             :body (str mock-path " not found")}))
+            (do
+             (println "sending" mock-path  "to" pathname)
+             {:code 200,
+              :message "OK",
+              :headers json-header,
+              :body (fs/readFileSync mock-path "utf8")})
+            (do
+             (println "Need file" mock-path)
+             {:code 400,
+              :message "Unknown request",
+              :headers html-header,
+              :body (str mock-path " not found")})))
       :else
-        {:code 400,
-         :message "Unknown request",
-         :headers json-header,
-         :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})})))
+        (do
+         (println "Bad result for rule" pathname (:method req) info)
+         {:code 400,
+          :message "Unknown request",
+          :headers json-header,
+          :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})}))))
 
 (defn load-config-from-file! [config-path]
   (let [ext (path/extname config-path)
