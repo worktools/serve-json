@@ -4,11 +4,11 @@
             ["fs" :as fs]
             ["path" :as path]
             [cirru-edn.core :refer [parse]]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [cljs.reader :refer [read-string]]
+            ["gaze" :as gaze]))
 
-(defn load-config! [] (parse (fs/readFileSync "config.cirru" "utf8")))
-
-(defonce *configs (atom (load-config!)))
+(defonce *configs (atom nil))
 
 (defn match-path [segments rule-path]
   (comment println "matching" segments rule-path)
@@ -42,47 +42,82 @@
           matched-rule
           (recur (:rest current-match) (:next matched-rule)))))))
 
+(def html-header {:Content-Type "text/html"})
+
+(def json-header {:Content-Type "application/json"})
+
 (defn handle-request! [req]
   (let [routes (:routes @*configs)
-        segments (split-path (:url req))
-        that-rule (find-match-rule segments routes)]
-    (comment println "find rule" that-rule)
-    (if (nil? that-rule)
-      {:code 400,
-       :message "OK",
-       :headers {:Content-Type "application/json"},
-       :body (str "No matching path for " (:url req))}
-      (let [info (get that-rule (:method req))]
-        (if (some? info)
-          (case (:type info)
-            :file
-              (let [mock-path (path/join js/process.env.PWD (:file info))]
-                (if (fs/existsSync mock-path)
-                  {:code 200,
-                   :message "OK",
-                   :headers {:Content-Type "application/json"},
-                   :body (fs/readFileSync mock-path "utf8")}
-                  {:code 400,
-                   :message "Unknown request",
-                   :headers {:Content-Type "application/json"},
-                   :body (str mock-path " not found")}))
-            {:code 400,
-             :message "Unknown request",
-             :headers {:Content-Type "application/json"},
-             :body (clj->js
-                    {:code 400, :message "Unknown info", :rule that-rule, :info info})})
-          {:code 400,
-           :message "Unknown request",
-           :headers {:Content-Type "application/json"},
-           :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})})))))
+        pathname (:url req)
+        segments (split-path pathname)
+        that-rule (find-match-rule segments routes)
+        info (get that-rule (:method req))
+        file-type (:type info)]
+    (comment println "find rule" pathname that-rule)
+    (cond
+      (= pathname "/")
+        {:code 200,
+         :message "OK",
+         :headers html-header,
+         :body "This is a JSON mocking server."}
+      (= pathname "/favicon.ico")
+        {:code 404, :message "No", :headers html-header, :body "No image"}
+      (nil? that-rule)
+        (do
+         (println "404" pathname)
+         {:code 400,
+          :message "Not matching",
+          :headers html-header,
+          :body (str "No matching path for " pathname)})
+      (= :file file-type)
+        (let [mock-path (:file info)]
+          (if (fs/existsSync mock-path)
+            (do
+             (println "sending" mock-path  "to" pathname)
+             {:code 200,
+              :message "OK",
+              :headers json-header,
+              :body (fs/readFileSync mock-path "utf8")})
+            (do
+             (println "Need file" mock-path)
+             {:code 400,
+              :message "Unknown request",
+              :headers html-header,
+              :body (str mock-path " not found")})))
+      :else
+        (do
+         (println "Bad result for rule" pathname (:method req) info)
+         {:code 400,
+          :message "Unknown request",
+          :headers json-header,
+          :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})}))))
 
-(defn start-server! []
+(defn load-config-from-file! [config-path]
+  (let [ext (path/extname config-path)
+        content (fs/readFileSync config-path "utf8")
+        result (case ext
+                 ".cirru" (parse content)
+                 ".edn" (read-string content )
+                 ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
+                 (do (println "Unknown config file" config-path)))]
+    (println "Running at" js/process.env.PWD)
+    (println "Loaded config from" config-path)
+    (reset! *configs result)))
+
+(defn load-config! []
+  (let [config-path (or (aget js/process.argv 2) "config.edn")]
+    (when-not (fs/existsSync config-path)
+      (println "Found no config" config-path)
+      (.exit js/process 1))
+    (load-config-from-file! config-path)
+    (gaze
+     config-path
+     (fn [err watcher]
+       (.on ^js watcher "changed" (fn [] (load-config-from-file! config-path)))))))
+
+(defn main! []
   (comment println @*configs)
-  (skir/create-server! #(handle-request! %) {:port 8008}))
+  (load-config!)
+  (skir/create-server! #(handle-request! %) {:port (or (:port @*configs) 7800)}))
 
-(defn main! [] (println "Started.") (start-server!))
-
-(defn reload! []
-  (.clear js/console)
-  (reset! *configs (load-config!))
-  (println "Reloaded configs."))
+(defn reload! [] (println "Reloaded."))

@@ -1,11 +1,11 @@
 {
   "name": "@jimengio/serve-json",
-  "version": "0.0.1-a3",
+  "version": "0.0.1-a5",
   "bin": {
     "serve-json": "./dist/server.js"
   },
   "scripts": {
-    "release": "yarn shadow-cljs release app",
+    "release": "rm -rfv dist/* && yarn shadow-cljs release app",
     "prepare": "yarn release",
     "watch": "yarn shadow-cljs watch app"
   },
@@ -17,5 +17,8 @@
     "shadow-cljs": "^2.8.83",
     "source-map-support": "^0.5.16",
     "ws": "^7.2.1"
+  },
+  "dependencies": {
+    "gaze": "^1.1.3"
   }
 }
