@@ -70,7 +70,7 @@
           :headers html-header,
           :body (str "No matching path for " pathname)})
       (= :file file-type)
-        (let [mock-path (path/join js/process.env.PWD (:file info))]
+        (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
             (do
              (println "sending" mock-path  "to" pathname)
@@ -112,14 +112,12 @@
     (load-config-from-file! config-path)
     (gaze
      config-path
-     (fn [err watcher] (.on watcher "changed" (fn [] (load-config-from-file! config-path)))))))
+     (fn [err watcher]
+       (.on ^js watcher "changed" (fn [] (load-config-from-file! config-path)))))))
 
 (defn main! []
   (comment println @*configs)
   (load-config!)
-  (skir/create-server! #(handle-request! %) {:port 8008}))
+  (skir/create-server! #(handle-request! %) {:port (or (:port @*configs) 7800)}))
 
-(defn reload! []
-  (.clear js/console)
-  (reset! *configs (load-config!))
-  (println "Reloaded configs."))
+(defn reload! [] (println "Reloaded."))
