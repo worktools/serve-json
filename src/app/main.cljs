@@ -5,26 +5,10 @@
             ["path" :as path]
             [cirru-edn.core :refer [parse]]
             [clojure.string :as string]
-            [cljs.reader :refer [read-string]]))
+            [cljs.reader :refer [read-string]]
+            ["gaze" :as gaze]))
 
-(defn load-config! []
-  (let [config-path (or (aget js/process.argv 2) "config.edn")]
-    (when-not (fs/existsSync config-path)
-      (println "Found no config" config-path)
-      (.exit js/process 1))
-    (println "Loading config from" config-path)
-    (let [ext (path/extname config-path)
-          content (fs/readFileSync config-path "utf8")
-          result (case ext
-                   ".cirru" (parse content)
-                   ".edn" (read-string content )
-                   ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
-                   (do nil))]
-      (if (nil? result)
-        (do (println "Unknown config file" config-path) (.exit js/process 1))
-        (do (println result) result)))))
-
-(defonce *configs (atom (load-config!)))
+(defonce *configs (atom nil))
 
 (defn match-path [segments rule-path]
   (comment println "matching" segments rule-path)
@@ -92,8 +76,30 @@
            :headers {:Content-Type "application/json"},
            :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})})))))
 
+(defn load-config-from-file! [config-path]
+  (let [ext (path/extname config-path)
+        content (fs/readFileSync config-path "utf8")
+        result (case ext
+                 ".cirru" (parse content)
+                 ".edn" (read-string content )
+                 ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
+                 (do (println "Unknown config file" config-path)))]
+    (println "Loaded config from" config-path)
+    (reset! *configs result)))
+
+(defn load-config! []
+  (let [config-path (or (aget js/process.argv 2) "config.edn")]
+    (when-not (fs/existsSync config-path)
+      (println "Found no config" config-path)
+      (.exit js/process 1))
+    (load-config-from-file! config-path)
+    (gaze
+     config-path
+     (fn [err watcher] (.on watcher "changed" (fn [] (load-config-from-file! config-path)))))))
+
 (defn start-server! []
   (comment println @*configs)
+  (load-config!)
   (skir/create-server! #(handle-request! %) {:port 8008}))
 
 (defn main! [] (println "Started.") (start-server!))
