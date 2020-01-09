@@ -65,7 +65,7 @@
 
 (defn handle-request! [req]
   (let [routes (:routes @*configs)
-        pathname (:url req)
+        pathname (first (string/split (:url req) "?"))
         segments (split-path pathname)
         that-rule (find-match-rule segments routes)
         info (get that-rule (:method req))
