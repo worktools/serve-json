@@ -6,9 +6,26 @@
             [cirru-edn.core :refer [parse]]
             [clojure.string :as string]
             [cljs.reader :refer [read-string]]
-            ["gaze" :as gaze]))
+            ["gaze" :as gaze]
+            ["latest-version" :as latest-version]
+            ["chalk" :as chalk])
+  (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defonce *configs (atom nil))
+
+(defn check-version! []
+  (let [pkg (.parse js/JSON (fs/readFileSync (path/join js/__dirname "../package.json")))
+        version (.-version pkg)]
+    (-> (latest-version (.-name pkg))
+        (.then
+         (fn [npm-version]
+           (if (= npm-version version)
+             (println "Running latest version" version)
+             (println
+              (.yellow
+               chalk
+               (<<
+                "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))))
 
 (defn match-path [segments rule-path]
   (comment println "matching" segments rule-path)
@@ -100,7 +117,6 @@
                  ".edn" (read-string content )
                  ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
                  (do (println "Unknown config file" config-path)))]
-    (println "Running at" js/process.env.PWD)
     (println "Loaded config from" config-path)
     (reset! *configs result)))
 
@@ -109,6 +125,7 @@
     (when-not (fs/existsSync config-path)
       (println "Found no config" config-path)
       (.exit js/process 1))
+    (println "Running at" js/process.env.PWD)
     (load-config-from-file! config-path)
     (gaze
      config-path
@@ -118,6 +135,7 @@
 (defn main! []
   (comment println @*configs)
   (load-config!)
-  (skir/create-server! #(handle-request! %) {:port (or (:port @*configs) 7800)}))
+  (skir/create-server! #(handle-request! %) {:port (or (:port @*configs) 7800)})
+  (check-version!))
 
 (defn reload! [] (println "Reloaded."))
