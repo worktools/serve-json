@@ -1,6 +1,6 @@
 {
   "name": "@jimengio/serve-json",
-  "version": "0.0.1-a5",
+  "version": "0.0.1-a6",
   "bin": {
     "serve-json": "./dist/server.js"
   },

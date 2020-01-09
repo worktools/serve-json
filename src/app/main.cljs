@@ -81,7 +81,7 @@
         {:code 404, :message "No", :headers html-header, :body "No image"}
       (nil? that-rule)
         (do
-         (println "404" pathname)
+         (println 404 pathname)
          {:code 400,
           :message "Not matching",
           :headers html-header,
@@ -90,14 +90,14 @@
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
             (do
-             (println "sending" mock-path  "to" pathname)
-             {:code 200,
+             (println "sending" mock-path "to" pathname)
+             {:code (or (:code info) 200),
               :message "OK",
               :headers json-header,
               :body (fs/readFileSync mock-path "utf8")})
             (do
              (println "Need file" mock-path)
-             {:code 400,
+             {:code 404,
               :message "Unknown request",
               :headers html-header,
               :body (str mock-path " not found")})))
