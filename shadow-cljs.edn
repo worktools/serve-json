@@ -8,6 +8,7 @@
     [mvc-works/skir "0.0.5-a2"]
     [cirru/edn "0.0.5"]
     [medley "1.2.0"]
+    [org.clojure/core.incubator "0.1.4"]
   ]
   :builds {
     :app {

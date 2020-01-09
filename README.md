@@ -37,7 +37,7 @@ Example of `config.edn`:
             {
               :path "events"
               :get {:type :file, :file "events.json"}
-              :delete {:status 202, :type :file, :file "ok.json"}
+              :delete {:code 202, :type :file, :file "ok.json"}
             }
           ]
         }
