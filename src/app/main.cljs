@@ -70,7 +70,7 @@
         that-rule (find-match-rule segments routes)
         info (get that-rule (:method req))
         file-type (:type info)]
-    (comment println "find rule" pathname that-rule)
+    (comment println "find rule" pathname that-rule info (:method req))
     (cond
       (= pathname "/")
         {:code 200,

@@ -1265,7 +1265,13 @@
                       |j $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578371329393) (:text "|\"find rule") (:id |tHSlEYwyl)
                       |r $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578371329867) (:text |that-rule) (:id |6nd6cYSp7)
                       |n $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578473051495) (:text |pathname) (:id |KruCD--r)
-                      |D $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578473112017) (:text |;) (:id |BH86FBl-h)
+                      |v $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578657277219) (:text |info) (:id |s8-RKvZbZ)
+                      |x $ {} (:type :expr) (:by |yeKFqj7rX) (:at 1578657293804)
+                        :data $ {}
+                          |T $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578657293804) (:text |:method) (:id |J9QJsO5on)
+                          |j $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578657293804) (:text |req) (:id |gDXNc-TR4)
+                        :id |HpK9JKdiT
+                      |D $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578657895458) (:text |;) (:id |VZKra3Bt)
                     :id |KJzJQ7Zd
                 :id |hjoJrzXiE
             :id |6fFB6-9DC
