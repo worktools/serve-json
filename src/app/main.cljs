@@ -8,7 +8,8 @@
             [cljs.reader :refer [read-string]]
             ["gaze" :as gaze]
             ["latest-version" :as latest-version]
-            ["chalk" :as chalk])
+            ["chalk" :as chalk]
+            ["cson-parser" :as CSON])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defonce *configs (atom nil))
@@ -26,6 +27,16 @@
                chalk
                (<<
                 "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))))
+
+(defn detect-config-file! []
+  (cond
+    (fs/existsSync "config.cirru") "config.cirru"
+    (fs/existsSync "config.cson") "config.cson"
+    (fs/existsSync "config.edn") "config.edn"
+    (fs/existsSync "config.json") "config.json"
+    :else nil))
+
+(defn file? [x] (or (= :file x) (= "file" x)))
 
 (defn match-path [segments rule-path]
   (comment println "matching" segments rule-path)
@@ -86,7 +97,7 @@
           :message "Not matching",
           :headers html-header,
           :body (str "No matching path for " pathname)})
-      (= :file file-type)
+      (file? file-type)
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
             (do
@@ -116,14 +127,16 @@
                  ".cirru" (parse content)
                  ".edn" (read-string content )
                  ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
+                 ".cson" (js->clj (CSON/parse content) :keywordize-keys true)
                  (do (println "Unknown config file" config-path)))]
     (println "Loaded config from" config-path)
     (reset! *configs result)))
 
 (defn load-config! []
-  (let [config-path (or (aget js/process.argv 2) "config.edn")]
+  (let [config-path (or (aget js/process.argv 2) (detect-config-file!))]
+    (when (nil? config-path) (println "No config file: config.edn") (.exit js/process 1))
     (when-not (fs/existsSync config-path)
-      (println "Found no config" config-path)
+      (println "Not found:" config-path)
       (.exit js/process 1))
     (println "Running at" js/process.env.PWD)
     (load-config-from-file! config-path)
