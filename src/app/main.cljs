@@ -9,7 +9,8 @@
             ["gaze" :as gaze]
             ["latest-version" :as latest-version]
             ["chalk" :as chalk]
-            ["cson-parser" :as CSON])
+            ["cson-parser" :as CSON]
+            ["js-yaml" :as js-yaml])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defonce *configs (atom nil))
@@ -34,6 +35,7 @@
     (fs/existsSync "config.cson") "config.cson"
     (fs/existsSync "config.edn") "config.edn"
     (fs/existsSync "config.json") "config.json"
+    (fs/existsSync "config.yaml") "config.yaml"
     :else nil))
 
 (defn file? [x] (or (= :file x) (= "file" x)))
@@ -128,6 +130,7 @@
                  ".edn" (read-string content )
                  ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
                  ".cson" (js->clj (CSON/parse content) :keywordize-keys true)
+                 ".yaml" (js->clj (js-yaml/load content) :keywordize-keys true)
                  (do (println "Unknown config file" config-path)))]
     (println "Loaded config from" config-path)
     (reset! *configs result)))
