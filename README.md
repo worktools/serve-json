@@ -47,13 +47,16 @@ Example of `config.edn`:
 }
 ```
 
-JSON and [Cirru EDN](https://github.com/Cirru/cirru-edn) are also supported:
+Besides EDN, JSON, [CSON](https://github.com/bevry/cson) and [Cirru EDN](https://github.com/Cirru/cirru-edn) are also supported([Comparison of data formats supported #5](https://github.com/jimengio/serve-json/issues/5)):
 
 ```bash
 serve-json config.json
 
 # also
 serve-json config.cirru
+
+# also
+serve-json config.cson
 ```
 
 ### License
