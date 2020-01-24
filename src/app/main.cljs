@@ -10,7 +10,9 @@
             ["latest-version" :as latest-version]
             ["chalk" :as chalk]
             ["cson-parser" :as CSON]
-            ["js-yaml" :as js-yaml])
+            ["js-yaml" :as js-yaml]
+            [lilac.core :refer [validate-lilac]]
+            [app.router :refer [lilac-router+]])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defonce *configs (atom nil))
@@ -131,7 +133,11 @@
                  ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
                  ".cson" (js->clj (CSON/parse content) :keywordize-keys true)
                  ".yaml" (js->clj (js-yaml/load content) :keywordize-keys true)
-                 (do (println "Unknown config file" config-path)))]
+                 (do (println "Unknown config file" config-path)))
+        validation (validate-lilac result (lilac-router+))]
+    (if (:ok? validation)
+      (println "passed validation")
+      (println (chalk/red (:formatted-message validation))))
     (println "Loaded config from" config-path)
     (reset! *configs result)))
 
