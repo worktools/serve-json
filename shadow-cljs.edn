@@ -17,5 +17,9 @@
       :release {:output-to "dist/server.js"}
       :devtools {:after-load app.main/reload!}
     }
+    :check-app {
+      :target :node-script, :output-to "target/server.js", :main app.main/main!,
+      :compiler-options {:warnings-as-errors true}
+    }
   }
 }
