@@ -3,104 +3,48 @@
   (:require [skir.core :as skir]
             ["fs" :as fs]
             ["path" :as path]
-            [cirru-edn.core :refer [parse]]
             [clojure.string :as string]
             [cljs.reader :refer [read-string]]
-            ["gaze" :as gaze]
             ["latest-version" :as latest-version]
             ["chalk" :as chalk]
-            ["cson-parser" :as CSON]
-            ["js-yaml" :as js-yaml]
-            [lilac.core :refer [validate-lilac]]
-            [app.router :refer [lilac-router+]])
+            [app.util :refer [check-version! file? split-path]]
+            [app.schema :as schema]
+            [app.path :refer [find-match-rule list-paths]]
+            [app.config :refer [*configs load-config!]])
   (:require-macros [clojure.core.strint :refer [<<]]))
-
-(defonce *configs (atom nil))
-
-(defn check-version! []
-  (let [pkg (.parse js/JSON (fs/readFileSync (path/join js/__dirname "../package.json")))
-        version (.-version pkg)]
-    (-> (latest-version (.-name pkg))
-        (.then
-         (fn [npm-version]
-           (if (= npm-version version)
-             (println "Running latest version" version)
-             (println
-              (.yellow
-               chalk
-               (<<
-                "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))))
-
-(defn detect-config-file! []
-  (cond
-    (fs/existsSync "config.cirru") "config.cirru"
-    (fs/existsSync "config.cson") "config.cson"
-    (fs/existsSync "config.edn") "config.edn"
-    (fs/existsSync "config.json") "config.json"
-    (fs/existsSync "config.yaml") "config.yaml"
-    :else nil))
-
-(defn file? [x] (or (= :file x) (= "file" x)))
-
-(defn match-path [segments rule-path]
-  (comment println "matching" segments rule-path)
-  (if (empty? rule-path)
-    {:matches? true, :rest segments}
-    (cond
-      (empty? segments) {:matches false, :rest segments, :rest-rule rule-path}
-      (= (first segments) (first rule-path)) (recur (rest segments) (rest rule-path))
-      (string/starts-with? (first rule-path) ":") (recur (rest segments) (rest rule-path))
-      :else {:matches? false, :rest segments, :rest-rule rule-path})))
-
-(defn split-path [x] (->> (string/split x "/") (filter (fn [x] (not (string/blank? x))))))
-
-(defn find-match-rule [segments rules]
-  (let [current-match (loop [xs rules]
-                        (let [cursor (first xs)]
-                          (comment println "compare" segments "to" cursor)
-                          (if (empty? xs)
-                            nil
-                            (let [result (match-path segments (split-path (:path cursor)))]
-                              (comment println "result" result)
-                              (comment println "cursor" cursor)
-                              (if (:matches? result)
-                                (assoc result :rule cursor)
-                                (recur (rest xs)))))))]
-    (comment println "current rule" current-match)
-    (if (nil? current-match)
-      nil
-      (let [matched-rule (:rule current-match)]
-        (if (empty? (:rest current-match))
-          matched-rule
-          (recur (:rest current-match) (:next matched-rule)))))))
-
-(def html-header {:Content-Type "text/html"})
-
-(def json-header {:Content-Type "application/json"})
 
 (defn handle-request! [req]
   (let [routes (:routes @*configs)
         pathname (first (string/split (:url req) "?"))
         segments (split-path pathname)
-        that-rule (find-match-rule segments routes)
-        info (get that-rule (:method req))
+        rule-result (find-match-rule segments routes)
+        info (get (:rule rule-result) (:method req))
         file-type (:type info)]
-    (comment println "find rule" pathname that-rule info (:method req))
+    (comment println "find rule" pathname rule-result info (:method req))
     (cond
       (= pathname "/")
         {:code 200,
          :message "OK",
-         :headers html-header,
-         :body "This is a JSON mocking server."}
+         :headers schema/json-header,
+         :body (js/JSON.stringify
+                (clj->js
+                 {:message (str "This is a JSON mocking server."),
+                  :choices (list-paths routes)})
+                nil
+                2)}
       (= pathname "/favicon.ico")
-        {:code 404, :message "No", :headers html-header, :body "No image"}
-      (nil? that-rule)
+        {:code 301, :headers {:Location "http://cdn.tiye.me/logo/jimeng-360x360.png"}}
+      (not (:ok? rule-result))
         (do
          (println 404 pathname)
          {:code 400,
           :message "Not matching",
-          :headers html-header,
-          :body (str "No matching path for " pathname)})
+          :headers schema/json-header,
+          :body (js/JSON.stringify
+                 (clj->js
+                  {:message (str "No matching path for " pathname), :reason rule-result})
+                 nil
+                 2)})
       (file? file-type)
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
@@ -108,51 +52,22 @@
              (println "sending" mock-path "to" pathname)
              {:code (or (:code info) 200),
               :message "OK",
-              :headers json-header,
+              :headers schema/json-header,
               :body (fs/readFileSync mock-path "utf8")})
             (do
              (println "Need file" mock-path)
              {:code 404,
               :message "Unknown request",
-              :headers html-header,
+              :headers schema/html-header,
               :body (str mock-path " not found")})))
       :else
         (do
          (println "Bad result for rule" pathname (:method req) info)
          {:code 400,
           :message "Unknown request",
-          :headers json-header,
-          :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})}))))
-
-(defn load-config-from-file! [config-path]
-  (let [ext (path/extname config-path)
-        content (fs/readFileSync config-path "utf8")
-        result (case ext
-                 ".cirru" (parse content)
-                 ".edn" (read-string content )
-                 ".json" (js->clj (js/JSON.parse content) :keywordize-keys true)
-                 ".cson" (js->clj (CSON/parse content) :keywordize-keys true)
-                 ".yaml" (js->clj (js-yaml/load content) :keywordize-keys true)
-                 (do (println "Unknown config file" config-path)))
-        validation (validate-lilac result (lilac-router+))]
-    (if (:ok? validation)
-      (println "passed validation")
-      (println (chalk/red (:formatted-message validation))))
-    (println "Loaded config from" config-path)
-    (reset! *configs result)))
-
-(defn load-config! []
-  (let [config-path (or (aget js/process.argv 2) (detect-config-file!))]
-    (when (nil? config-path) (println "No config file: config.edn") (.exit js/process 1))
-    (when-not (fs/existsSync config-path)
-      (println "Not found:" config-path)
-      (.exit js/process 1))
-    (println "Running at" js/process.env.PWD)
-    (load-config-from-file! config-path)
-    (gaze
-     config-path
-     (fn [err watcher]
-       (.on ^js watcher "changed" (fn [] (load-config-from-file! config-path)))))))
+          :headers schema/json-header,
+          :body (clj->js
+                 {:code 400, :message "Unknown rule", :rule (:rule rule-result), :info info})}))))
 
 (defn main! []
   (comment println @*configs)

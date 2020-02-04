@@ -1,13 +1,9 @@
 {
   :source-paths ["src"]
-  ; :repositories {
-  ;   "central" {:url "https://maven.aliyun.com/nexus/content/groups/public/"}
-  ;   "clojars" {:url "https://mirrors.ustc.edu.cn/clojars/"}
-  ; }
   :dependencies [
     [mvc-works/skir "0.0.6"]
-    [mvc-works/lilac "0.0.2"]
-    [cirru/edn "0.0.6"]
+    [mvc-works/lilac "0.0.4"]
+    [cirru/edn "0.0.7"]
     [medley "1.2.0"]
     [org.clojure/core.incubator "0.1.4"]
   ]
@@ -18,7 +14,7 @@
       :devtools {:after-load app.main/reload!}
     }
     :check-app {
-      :target :node-script, :output-to "target/server.js", :main app.main/main!,
+      :target :node-script, :output-to "target/server.js", :main app.main/main!
       :compiler-options {:warnings-as-errors true}
     }
   }
