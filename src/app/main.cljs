@@ -9,7 +9,7 @@
             ["chalk" :as chalk]
             [app.util :refer [check-version! file? split-path]]
             [app.schema :as schema]
-            [app.path :refer [find-match-rule]]
+            [app.path :refer [find-match-rule list-paths]]
             [app.config :refer [*configs load-config!]])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
@@ -25,8 +25,13 @@
       (= pathname "/")
         {:code 200,
          :message "OK",
-         :headers schema/html-header,
-         :body (str "This is a JSON mocking server.")}
+         :headers schema/json-header,
+         :body (js/JSON.stringify
+                (clj->js
+                 {:message (str "This is a JSON mocking server."),
+                  :choices (list-paths routes)})
+                nil
+                2)}
       (= pathname "/favicon.ico")
         {:code 301, :headers {:Location "http://cdn.tiye.me/logo/jimeng-360x360.png"}}
       (not (:ok? rule-result))

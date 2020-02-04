@@ -30,3 +30,11 @@
         (if (empty? (:rest current-match))
           {:ok? true, :rule matched-rule}
           (recur (:rest current-match) (:next matched-rule)))))))
+
+(defn list-paths [routes]
+  (->> routes
+       (mapcat
+        (fn [rule]
+          (concat
+           [(:path rule)]
+           (->> (list-paths (:next rule)) (map (fn [x] (str (:path rule) "/" x)))))))))
