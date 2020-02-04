@@ -25,8 +25,8 @@
                                 (recur (rest xs)))))))]
     (comment println "current rule" current-match)
     (if (nil? current-match)
-      nil
+      {:ok? false, :segments segments, :choices (map :path rules)}
       (let [matched-rule (:rule current-match)]
         (if (empty? (:rest current-match))
-          matched-rule
+          {:ok? true, :rule matched-rule}
           (recur (:rest current-match) (:next matched-rule)))))))

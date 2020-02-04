@@ -17,10 +17,10 @@
   (let [routes (:routes @*configs)
         pathname (first (string/split (:url req) "?"))
         segments (split-path pathname)
-        that-rule (find-match-rule segments routes)
-        info (get that-rule (:method req))
+        rule-result (find-match-rule segments routes)
+        info (get (:rule rule-result) (:method req))
         file-type (:type info)]
-    (comment println "find rule" pathname that-rule info (:method req))
+    (comment println "find rule" pathname rule-result info (:method req))
     (cond
       (= pathname "/")
         {:code 200,
@@ -29,13 +29,17 @@
          :body (str "This is a JSON mocking server.")}
       (= pathname "/favicon.ico")
         {:code 301, :headers {:Location "http://cdn.tiye.me/logo/jimeng-360x360.png"}}
-      (nil? that-rule)
+      (not (:ok? rule-result))
         (do
          (println 404 pathname)
          {:code 400,
           :message "Not matching",
-          :headers schema/html-header,
-          :body (str "No matching path for " pathname)})
+          :headers schema/json-header,
+          :body (js/JSON.stringify
+                 (clj->js
+                  {:message (str "No matching path for " pathname), :reason rule-result})
+                 nil
+                 2)})
       (file? file-type)
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
@@ -57,7 +61,8 @@
          {:code 400,
           :message "Unknown request",
           :headers schema/json-header,
-          :body (clj->js {:code 400, :message "Unknown rule", :rule that-rule, :info info})}))))
+          :body (clj->js
+                 {:code 400, :message "Unknown rule", :rule (:rule rule-result), :info info})}))))
 
 (defn main! []
   (comment println @*configs)
