@@ -1,5 +1,4 @@
-
-name: npm publish
+name: npm release
 
 on:
   release:
@@ -27,17 +26,15 @@ jobs:
           key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-yarn-
-
       - name: Cache Clojars
         uses: actions/cache@v1
         env:
           cache-name: cache-clojars
         with:
-          path: ~/.m2
+          path: ~/.m2/repository
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('shadow-cljs.edn') }}
           restore-keys: |
             ${{ runner.os }}-clojars
-
       - run: yarn && yarn release && npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
