@@ -51,7 +51,7 @@
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
             (do
-             (println "sending" mock-path "to" pathname)
+             (println (chalk/gray "sending" mock-path "to" pathname))
              {:code (or (:code info) 200),
               :message "OK",
               :headers (merge cors-header schema/json-header),

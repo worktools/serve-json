@@ -428,14 +428,18 @@
                                             :id |swyANsnkjq
                                         :id |gEtug12xj0
                                       |D $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472540754) (:text |do) (:id |9BMgTWBu)
-                                      |L $ {} (:type :expr) (:by |yeKFqj7rX) (:at 1578472541060)
+                                      |L $ {} (:type :expr) (:by |yeKFqj7rX) (:at 1583724991961)
                                         :data $ {}
-                                          |T $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472541722) (:text |println) (:id |8dkHNGJ6u)
-                                          |j $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472885191) (:text "|\"sending") (:id |ssSb-kMhr)
-                                          |n $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472883071) (:text "|\"to") (:id |NQThOHOKF)
-                                          |k $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472890978) (:text |mock-path) (:id |5mOrXyKEG)
-                                          |t $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578473005389) (:text |pathname) (:id |2yvNIOZRo)
-                                        :id |xFMOVMJ4V
+                                          |T $ {} (:type :expr) (:by |yeKFqj7rX) (:at 1578472541060)
+                                            :data $ {}
+                                              |T $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1583724991016) (:text |chalk/gray) (:id |8dkHNGJ6u)
+                                              |j $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472885191) (:text "|\"sending") (:id |ssSb-kMhr)
+                                              |n $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472883071) (:text "|\"to") (:id |NQThOHOKF)
+                                              |k $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578472890978) (:text |mock-path) (:id |5mOrXyKEG)
+                                              |t $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1578473005389) (:text |pathname) (:id |2yvNIOZRo)
+                                            :id |xFMOVMJ4V
+                                          |D $ {} (:type :leaf) (:by |yeKFqj7rX) (:at 1583724993235) (:text |println) (:id |CbiN1Zy7)
+                                        :id |g6zeWM8Zv
                                     :id |7ncv7wNev
                                   |v $ {} (:type :expr) (:by |yeKFqj7rX) (:at 1578472514593)
                                     :data $ {}
