@@ -21,6 +21,8 @@
                (<<
                 "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))))
 
+(defn delay! [t f] (js/setTimeout f t))
+
 (defn file? [x] (or (= :file x) (= "file" x)))
 
 (defn split-path [x] (->> (string/split x "/") (filter (fn [x] (not (string/blank? x))))))

@@ -26,7 +26,10 @@
  ()
  (optional+
   (record+
-   {:code (optional+ (number+)), :type (is+ :file), :file (string+)}
+   {:code (optional+ (number+)),
+    :type (is+ :file),
+    :file (string+),
+    :delay (optional+ (number+))}
    {:check-keys? true})))
 
 (deflilac

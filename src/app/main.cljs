@@ -7,7 +7,7 @@
             [cljs.reader :refer [read-string]]
             ["latest-version" :as latest-version]
             ["chalk" :as chalk]
-            [app.util :refer [check-version! file? split-path]]
+            [app.util :refer [check-version! file? split-path delay!]]
             [app.schema :as schema]
             [app.path :refer [find-match-rule list-paths]]
             [app.config :refer [*configs load-config!]])
@@ -50,12 +50,17 @@
       (file? file-type)
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
-            (do
-             (println (chalk/gray "sending" mock-path "to" pathname))
-             {:code (or (:code info) 200),
-              :message "OK",
-              :headers (merge cors-header schema/json-header),
-              :body (fs/readFileSync mock-path "utf8")})
+            (fn [send!]
+              (do
+               (println (chalk/gray "sending" mock-path "to" pathname))
+               (delay!
+                (or (:delay info) 0)
+                (fn []
+                  (send!
+                   {:code (or (:code info) 200),
+                    :message "OK",
+                    :headers (merge cors-header schema/json-header),
+                    :body (fs/readFileSync mock-path "utf8")})))))
             (do
              (println "Need file" mock-path)
              {:code 404,
