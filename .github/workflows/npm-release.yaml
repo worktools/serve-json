@@ -10,11 +10,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: docker://timbru31/java-node:latest
+
       - uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 13
           registry-url: https://registry.npmjs.org/
 
-      - run: yarn && yarn release && npm publish
+      - run: yarn && yarn release
+
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
