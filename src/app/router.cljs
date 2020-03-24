@@ -47,4 +47,8 @@
 (deflilac
  lilac-router+
  ()
- (record+ {:port (number+), :routes (vector+ (lilac-router-path+))} {:exact-keys? true}))
+ (record+
+  {:port (number+),
+   :fallback-host (optional+ (string+)),
+   :routes (vector+ (lilac-router-path+))}
+  {:check-keys? true}))
