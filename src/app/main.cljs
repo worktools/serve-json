@@ -10,11 +10,15 @@
             [app.util :refer [check-version! file? split-path delay!]]
             [app.schema :as schema]
             [app.path :refer [find-match-rule list-paths]]
-            [app.config :refer [*configs load-config!]])
+            [app.config :refer [*configs load-config!]]
+            ["http-proxy" :as http-proxy])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
-(defn handle-request! [req]
+(defonce proxy (.createProxy http-proxy (clj->js {})))
+
+(defn handle-request! [req res]
   (let [routes (:routes @*configs)
+        fallback-host (:fallback-host @*configs)
         pathname (first (string/split (:url req) "?"))
         segments (split-path pathname)
         rule-result (find-match-rule segments routes)
@@ -37,16 +41,21 @@
       (= pathname "/favicon.ico")
         {:code 301, :headers {:Location "http://cdn.tiye.me/logo/jimeng-360x360.png"}}
       (not (:ok? rule-result))
-        (do
-         (println 404 pathname)
-         {:code 400,
-          :message "Not matching",
-          :headers (merge cors-header schema/json-header),
-          :body (js/JSON.stringify
-                 (clj->js
-                  {:message (str "No matching path for " pathname), :reason rule-result})
-                 nil
-                 2)})
+        (if (some? fallback-host)
+          (do
+           (println (chalk/gray "proxy to" fallback-host pathname))
+           (.web proxy (:original-request req) res (clj->js {:target fallback-host}))
+           :effect)
+          (do
+           (println 404 pathname)
+           {:code 400,
+            :message "Not matching",
+            :headers (merge cors-header schema/json-header),
+            :body (js/JSON.stringify
+                   (clj->js
+                    {:message (str "No matching path for " pathname), :reason rule-result})
+                   nil
+                   2)}))
       (file? file-type)
         (let [mock-path (:file info)]
           (if (fs/existsSync mock-path)
@@ -79,7 +88,7 @@
 (defn main! []
   (comment println @*configs)
   (load-config!)
-  (skir/create-server! #(handle-request! %) {:port (or (:port @*configs) 7800)})
+  (skir/create-server! #(handle-request! %1 %2) {:port (or (:port @*configs) 7800)})
   (check-version!))
 
 (defn reload! [] (println "Reloaded."))

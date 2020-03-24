@@ -16,6 +16,7 @@ Example of `config.edn`:
 ```cirru
 {
   :port 7800
+  :fallback-url nil
   :routes [
     {
       :path "home"
@@ -61,6 +62,10 @@ serve-json config.cson
 # also
 serve-json config.yaml
 ```
+
+#### `:fallback-url`
+
+When `:fallback-url` is specified, it will be used as a default proxy target when no config path is matched.
 
 ### License
 
