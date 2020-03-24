@@ -25,7 +25,9 @@
         info (get (:rule rule-result) (:method req))
         file-type (:type info)
         cors-header {"Access-Control-Allow-Credentials" true,
-                     "Access-Control-Allow-Origin" (:origin (:headers req))}]
+                     "Access-Control-Allow-Methods" "PUT,POST,DELETE",
+                     "Access-Control-Allow-Origin" (:origin (:headers req)),
+                     "Access-Control-Allow-Headers" "Content-Type"}]
     (comment println "find rule" pathname rule-result info (:method req))
     (cond
       (= pathname "/")
@@ -38,9 +40,11 @@
                   :choices (list-paths routes)})
                 nil
                 2)}
+      (= :options (:method req))
+        {:code 200, :message "OK", :headers (merge cors-header), :body "OK"}
       (= pathname "/favicon.ico")
         {:code 301, :headers {:Location "http://cdn.tiye.me/logo/jimeng-360x360.png"}}
-      (not (:ok? rule-result))
+      (or (not (:ok? rule-result)) (nil? info))
         (if (some? fallback-host)
           (do
            (println (chalk/gray "proxy to" fallback-host pathname))
