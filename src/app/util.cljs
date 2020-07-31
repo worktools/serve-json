@@ -4,22 +4,23 @@
             ["chalk" :as chalk]
             ["latest-version" :as latest-version]
             ["path" :as path]
-            [clojure.string :as string])
+            [clojure.string :as string]
+            [cljs.core.async :refer [go]]
+            [cljs.core.async.interop :refer (<p!)])
   (:require-macros [clojure.core.strint :refer [<<]]))
 
 (defn check-version! []
-  (let [pkg (.parse js/JSON (fs/readFileSync (path/join js/__dirname "../package.json")))
-        version (.-version pkg)]
-    (-> (latest-version (.-name pkg))
-        (.then
-         (fn [npm-version]
-           (if (= npm-version version)
-             (println "Running latest version" version)
-             (println
-              (.yellow
-               chalk
-               (<<
-                "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))))
+  (go
+   (let [pkg (.parse js/JSON (fs/readFileSync (path/join js/__dirname "../package.json")))
+         version (.-version pkg)
+         npm-version (<p! (latest-version (.-name pkg)))]
+     (if (= npm-version version)
+       (println "Running latest version" version)
+       (println
+        (.yellow
+         chalk
+         (<<
+          "New version ~{npm-version} available, current one is ~{version} . Please upgrade!\n\nyarn global add @jimengio/serve-json\n\n")))))))
 
 (defn delay! [t f] (js/setTimeout f t))
 

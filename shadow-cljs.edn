@@ -1,9 +1,9 @@
 {
   :source-paths ["src"]
   :dependencies [
-    [mvc-works/skir "0.0.8-a1"]
-    [mvc-works/lilac "0.1.5"]
-    [cirru/edn "0.0.8"]
+    [mvc-works/skir "0.0.9-a4"]
+    [mvc-works/lilac "0.1.6"]
+    [cirru/edn "0.0.9"]
     [medley "1.3.0"]
     [org.clojure/core.incubator "0.1.4"]
   ]
