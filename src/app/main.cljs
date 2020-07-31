@@ -48,7 +48,15 @@
         (if (some? fallback-host)
           (do
            (println (chalk/gray "proxy to" fallback-host pathname))
-           (.web proxy (:original-request req) res (clj->js {:target fallback-host}))
+           (try
+            (.web proxy (:original-request req) res (clj->js {:target fallback-host}))
+            (catch
+             js/Error
+             err
+             {:code 500,
+              :message "Failed to access fallback host",
+              :headers (merge cors-header schema/json-header),
+              :body err}))
            :effect)
           (do
            (println 404 pathname)
@@ -61,25 +69,33 @@
                    nil
                    2)}))
       (file? file-type)
-        (let [mock-path (:file info)]
-          (if (fs/existsSync mock-path)
-            (fn [send!]
-              (do
-               (println (chalk/gray "sending" mock-path "to" pathname))
-               (delay!
-                (or (:delay info) 0)
-                (fn []
+        (fn [send!]
+          (let [mock-path (:file info)]
+            (fs/access
+             mock-path
+             (fn [err fd]
+               (if (some? err)
+                 (do
+                  (println "Need file" mock-path)
                   (send!
-                   {:code (or (:code info) 200),
-                    :message "OK",
-                    :headers (merge cors-header schema/json-header),
-                    :body (fs/readFileSync mock-path "utf8")})))))
-            (do
-             (println "Need file" mock-path)
-             {:code 404,
-              :message "Unknown request",
-              :headers (merge cors-header schema/html-header),
-              :body (str mock-path " not found")})))
+                   {:code 404,
+                    :message "Unknown request",
+                    :headers (merge cors-header schema/html-header),
+                    :body (str mock-path " not found")}))
+                 (do
+                  (println (chalk/gray "sending" mock-path "to" pathname))
+                  (delay!
+                   (or (:delay info) 0)
+                   (fn []
+                     (fs/readFile
+                      mock-path
+                      "utf8"
+                      (fn [err content]
+                        (send!
+                         {:code (or (:code info) 200),
+                          :message "OK",
+                          :headers (merge cors-header schema/json-header),
+                          :body content})))))))))))
       :else
         (do
          (println "Bad result for rule" pathname (:method req) info)
@@ -96,3 +112,10 @@
   (check-version!))
 
 (defn reload! [] (println "Reloaded."))
+
+(.on
+ proxy
+ "error"
+ (fn [err req res]
+   (js/console.log err)
+   (.end res (str "No path matched: " (.-url req) "\n" "\n" err))))
