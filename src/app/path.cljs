@@ -8,7 +8,9 @@
     (cond
       (empty? segments) {:matches false, :rest segments, :rest-rule rule-path}
       (= (first segments) (first rule-path)) (recur (rest segments) (rest rule-path))
-      (string/starts-with? (first rule-path) ":") (recur (rest segments) (rest rule-path))
+      (or (string/starts-with? (first rule-path) ":")
+          (re-matches #"\{[\w\d\-]+\}" (first rule-path)))
+        (recur (rest segments) (rest rule-path))
       :else {:matches? false, :rest segments, :rest-rule rule-path})))
 
 (defn find-match-rule [segments rules]
