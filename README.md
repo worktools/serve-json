@@ -7,48 +7,54 @@ Serve JSON
 ![](https://img.shields.io/npm/v/@jimengio/serve-json.svg?style=flat-square)
 
 ```bash
-yarn global add @jimengio/serve-json
-serve-json config.edn
+yarn global add @worktools/serve-json
+serve-json config.cirru
 ```
 
-Example of `config.edn`:
+Example of `config.cirru`:
 
 ```cirru
-{
+{}
   :port 7800
   :fallback-host nil
-  :routes [
-    {
-      :path "home"
-      :get {:type :file, :file "home.json"}
-    }
-    {
-      :path "plants/:plant-id"
-      :get {:type :file, :file "plant-default.json"}
-      :post {:type :file, :file "ok.json"}
-      :next [
-        {
-          :path "overview"
-          :get {:type :file, :file "overview.json"}
-        }
-        {
-          :path "materials/:material-id"
-          :get {:type :file, :file "materials.json"}
-          :next [
-            {
-              :path "events"
-              :get {:type :file, :file "events.json"}
-              :delete {:code 202, :type :file, :file "ok.json"}
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+  :routes $ []
+    {}
+      :path "|home"
+      :get $ {}
+        :type :file
+        :file "|home.json"
+    {}
+      :path "|plants/:plant-id"
+      :get $ {}
+        :type :file
+        :file "|plant-default.json"
+      :post $ {}
+        :type :file
+        :file "|ok.json"
+      :next $ []
+        {}
+          :path "|overview"
+          :get $ {}
+            :type :file
+            :file "|overview.json"
+        {}
+          :path "|materials/:material-id"
+          :get $ {}
+            :type :file
+            :file "|materials.json"
+          :next $ []
+            {}
+              :path "|events"
+              :get $ {}
+                :type :file
+                :file "|events.json"
+              :delete $ {}
+                :code 202
+                :type :file
+                :file "|ok.json"
 ```
 
-Besides EDN, JSON, [CSON](https://github.com/bevry/cson), YAML and [Cirru EDN](https://github.com/Cirru/cirru-edn) are also supported([Comparison of data formats supported #5](https://github.com/jimengio/serve-json/issues/5)):
+Besides JSON, [CSON](https://github.com/bevry/cson), YAML and [Cirru EDN](https://github.com/Cirru/cirru-edn) are also supported([Comparison of data formats supported #5](https://github.com/jimengio/serve-json/issues/5)):
 
 ```bash
 serve-json config.json
