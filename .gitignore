@@ -8,3 +8,11 @@
 .nrepl-port
 
 /json/
+
+.calcit-error.cirru
+.compact-inc.cirru
+
+js-out
+
+
+config

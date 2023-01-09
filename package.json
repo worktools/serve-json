@@ -2,23 +2,19 @@
   "name": "@worktools/serve-json",
   "version": "0.0.6",
   "bin": {
-    "serve-json": "./dist/server.js"
+    "serve-json": "./main.js"
   },
   "scripts": {
-    "release": "rm -rfv dist/* && yarn shadow-cljs release app"
   },
-  "main": "index.js",
   "repository": "git@github.com:mvc-works/serve-json.git",
   "author": "jiyinyiyong <jiyinyiyong@gmail.com>",
   "license": "MIT",
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "dependencies": {
+    "@calcit/procs": "^0.6.19",
     "chalk": "^4.1.0",
-    "cson-parser": "^4.0.5",
     "gaze": "^1.1.3",
     "http-proxy": "^1.18.1",
-    "js-yaml": "^3.14.0",
     "latest-version": "^5.1.0"
   }
 }
