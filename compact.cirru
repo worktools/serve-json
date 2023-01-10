@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.6)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.7)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -85,7 +85,7 @@
                       {} (:code 400) (:message "\"Not matching")
                         :headers $ merge cors-header schema/json-header
                         :body $ js/JSON.stringify
-                          js-object $ {}
+                          js-object
                             :message $ str "\"No matching path for " pathname
                             :reason $ to-js-data rule-result
                           , nil 2
@@ -156,7 +156,8 @@
               ; println "\"current rule" current-match
               if (nil? current-match)
                 {} (:ok? false) (:segments segments)
-                  :choices $ map :path rules
+                  :choices $ map rules
+                    fn (r) (get r :path)
                 let
                     matched-rule $ :rule current-match
                   if
@@ -167,7 +168,7 @@
           def letter-number-pattern $ new js/RegExp "\"\\{[\\w\\d\\-]+\\}"
         |list-paths $ quote
           defn list-paths (routes)
-            -> routes $ mapcat
+            -> routes .to-list $ mapcat
               fn (rule)
                 concat
                   [] $ :path rule
