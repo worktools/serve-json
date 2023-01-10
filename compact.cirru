@@ -8,18 +8,11 @@
       :defs $ {}
         |*configs $ quote (defatom *configs nil)
         |detect-config-file! $ quote
-          defn detect-config-file! () $ cond
-              fs/existsSync "\"config.cirru"
-              , "\"config.cirru"
-            (fs/existsSync "\"config.cson") "\"config.cson"
-            (fs/existsSync "\"config.edn") "\"config.edn"
-            (fs/existsSync "\"config.json") "\"config.json"
-            (fs/existsSync "\"config.yaml") "\"config.yaml"
-            :else nil
+          defn detect-config-file! () $ if (fs/existsSync "\"config.cirru") "\"config.cirru" nil
         |load-config! $ quote
           defn load-config! () $ let
               config-path $ or (aget js/process.argv 2) (detect-config-file!)
-            when (nil? config-path) (println "\"No config file: config.edn") (js/process.exit 1)
+            when (nil? config-path) (println "\"No config file: config.cirru") (js/process.exit 1)
             when-not (fs/existsSync config-path) (println "\"Not found:" config-path) (js/process.exit 1)
             println "\"Running at" js/process.env.PWD
             load-config-from-file! config-path

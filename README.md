@@ -54,8 +54,6 @@ Example of `config.cirru`:
                 :file "|ok.json"
 ```
 
-Besides JSON, [CSON](https://github.com/bevry/cson), YAML and [Cirru EDN](https://github.com/Cirru/cirru-edn) are also supported([Comparison of data formats supported #5](https://github.com/jimengio/serve-json/issues/5)):
-
 #### `:fallback-host`
 
 When `:fallback-host` is specified, it will be used as a default proxy target when no config path is matched.

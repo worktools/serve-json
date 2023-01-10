@@ -2,7 +2,7 @@
   "name": "@worktools/serve-json",
   "version": "0.0.6",
   "bin": {
-    "serve-json": "./main.js"
+    "serve-json": "./main.mjs"
   },
   "scripts": {
   },
