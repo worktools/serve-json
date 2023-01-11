@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.7)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.8)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -156,8 +156,8 @@
               ; println "\"current rule" current-match
               if (nil? current-match)
                 {} (:ok? false) (:segments segments)
-                  :choices $ map rules
-                    fn (r) (get r :path)
+                  :choices $ -> rules .to-list
+                    map $ fn (r) (get r :path)
                 let
                     matched-rule $ :rule current-match
                   if
