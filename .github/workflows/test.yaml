@@ -1,39 +1,32 @@
-name: Run tests
+name: Try to upload
 
 on:
-  pull_request: {}
   push:
     branches:
-      - master
+      - main
+  pull_request: {}
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  test:
+    runs-on: ubuntu-22.04
     steps:
-      - uses: docker://timbru31/java-node:latest
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-      - name: Get yarn cache
-        id: yarn-cache
-        run: echo "::set-output name=dir::$(yarn cache dir)"
+    - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      id: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
 
-      - uses: actions/cache@v1
-        name: Cache node modules of yarn
-        with:
-          path: ${{ steps.yarn-cache.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache Clojars
-        uses: actions/cache@v1
-        env:
-          cache-name: cache-clojars
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('shadow-cljs.edn') }}
-          restore-keys: |
-            ${{ runner.os }}-clojars
+    - name: add cr
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/bin
+        wget -O $GITHUB_WORKSPACE/bin/cr https://github.com/calcit-lang/calcit/releases/download/0.6.20/cr
+        chmod +x $GITHUB_WORKSPACE/bin/cr
+        echo "::add-path::$GITHUB_WORKSPACE/bin"
 
-      - name: run tests
-        run: 'yarn && yarn shadow-cljs check check-app'
+    - name: "prepare modules"
+      run: >
+        mkdir -p ~/.config/calcit/modules/ && cd ~/.config/calcit/modules/
+        && git clone https://github.com/calcit-lang/lilac.git
+        && git clone https://github.com/calcit-lang/skir.git
+
+    - run: cr --emit-js -1

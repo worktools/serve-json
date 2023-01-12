@@ -1,4 +1,5 @@
-name: npm release
+
+name: npm publish
 
 on:
   release:
@@ -6,18 +7,35 @@ on:
 
 jobs:
   publish-npm:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: docker://timbru31/java-node:latest
+    - uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 13
-          registry-url: https://registry.npmjs.org/
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+        cache: yarn
+        registry-url: https://registry.npmjs.org/
 
-      - run: yarn && yarn release
+    - name: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      id: ACTIONS_ALLOW_UNSECURE_COMMANDS
+      run: echo 'ACTIONS_ALLOW_UNSECURE_COMMANDS=true' >> $GITHUB_ENV
 
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+    - name: add cr
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/bin
+        wget -O $GITHUB_WORKSPACE/bin/cr https://github.com/calcit-lang/calcit/releases/download/0.6.20/cr
+        chmod +x $GITHUB_WORKSPACE/bin/cr
+        echo "::add-path::$GITHUB_WORKSPACE/bin"
+
+    - name: "prepare modules"
+      run: >
+        mkdir -p ~/.config/calcit/modules/ && cd ~/.config/calcit/modules/
+        && git clone https://github.com/calcit-lang/lilac.git
+        && git clone https://github.com/calcit-lang/skir.git
+
+    - run: yarn && cr --emit-js -1
+
+    - run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{secrets.npm_token}}
