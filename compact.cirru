@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.8)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.9)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -20,7 +20,7 @@
               println "\"Running at" js/process.env.PWD
               load-config-from-file! config-path
               gaze config-path $ fn (err watcher)
-                .!on watcher "\"changed" $ fn () (load-config-from-file! config-path)
+                .!on watcher "\"changed" $ fn (e) (load-config-from-file! config-path)
         |load-config-from-file! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn load-config-from-file! (config-path)
@@ -30,16 +30,19 @@
                   result $ case-default ext
                     do $ println "\"Unknown config file" config-path
                     "\".cirru" $ parse-cirru-edn content
+                    "\".json" $ -> content js/JSON.parse to-calcit-data tagging-edn
+                    "\".json5" $ -> (.!parse JSON5 content) to-calcit-data tagging-edn
                   validation $ validate-lilac result (lilac-router+)
                 if (:ok? validation) (println "\"passed validation")
-                  println $ chalk/red (:formatted-message validation)
+                  println $ .!red chalk (:formatted-message validation)
                 println "\"Loaded config from" config-path
                 reset! *configs result
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
-          ns app.config $ :require ("\"fs" :as fs) ("\"gaze" :default gaze) ("\"chalk" :as chalk) ("\"path" :as path)
+          ns app.config $ :require ("\"fs" :as fs) ("\"gaze" :default gaze) ("\"chalk" :default chalk) ("\"path" :as path)
             app.router :refer $ lilac-router+
             lilac.core :refer $ validate-lilac
+            "\"json5" :default JSON5
     |app.main $ %{} :FileEntry
       :defs $ {}
         |*proxy $ %{} :CodeEntry (:doc |)
@@ -215,7 +218,8 @@
               record+
                 {}
                   :code $ optional+ (number+)
-                  :type $ is+ :file
+                  :type $ or+
+                    [] (is+ :file) (is+ "\"file")
                   :file $ string+
                   :delay $ optional+ (number+)
                 {} $ :check-keys? true

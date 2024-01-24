@@ -1,6 +1,4 @@
-
-Serve JSON
-----
+## Serve JSON
 
 ### Usage
 
@@ -8,10 +6,77 @@ Serve JSON
 
 ```bash
 yarn global add @worktools/serve-json
-serve-json config.cirru
+serve-json config.json
 ```
 
-Example of `config.cirru`:
+Supported config files are JSON, JSON5, Cirru EDN.
+
+<details><summary>
+Example of `config.json`.
+</summary>
+
+```json
+{
+  "port": 7800,
+  "fallback-host": null,
+  "routes": [
+    {
+      "path": "home",
+      "get": {
+        "type": "file",
+        "file": "home.json"
+      }
+    },
+    {
+      "path": "plants/:plant-id",
+      "get": {
+        "type": "file",
+        "file": "plant-default.json"
+      },
+      "post": {
+        "type": "file",
+        "file": "ok.json"
+      },
+      "next": [
+        {
+          "path": "overview",
+          "get": {
+            "type": "file",
+            "file": "overview.json"
+          }
+        },
+        {
+          "path": "materials/:material-id",
+          "get": {
+            "type": "file",
+            "file": "materials.json"
+          },
+          "next": [
+            {
+              "path": "events",
+              "get": {
+                "type": "file",
+                "file": "events.json"
+              },
+              "delete": {
+                "code": 202,
+                "type": "file",
+                "file": "ok.json"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+</details>
+
+<details><summary>
+Example of `config.cirru`.
+</summary>
 
 ```cirru
 {}
@@ -53,6 +118,8 @@ Example of `config.cirru`:
                 :type :file
                 :file "|ok.json"
 ```
+
+</details>
 
 #### `:fallback-host`
 

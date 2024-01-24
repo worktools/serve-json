@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.8)
+  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.9)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -115,6 +115,7 @@
                                   |T $ %{} :Leaf (:at 1578470583487) (:by |yeKFqj7rX) (:text |fn)
                                   |j $ %{} :Expr (:at 1578470583776) (:by |yeKFqj7rX)
                                     :data $ {}
+                                      |T $ %{} :Leaf (:at 1706100489220) (:by |yeKFqj7rX) (:text |e)
                                   |r $ %{} :Expr (:at 1578470584466) (:by |yeKFqj7rX)
                                     :data $ {}
                                       |T $ %{} :Leaf (:at 1578470589307) (:by |yeKFqj7rX) (:text |load-config-from-file!)
@@ -169,6 +170,29 @@
                                     :data $ {}
                                       |T $ %{} :Leaf (:at 1673283631003) (:by |yeKFqj7rX) (:text |parse-cirru-edn)
                                       |j $ %{} :Leaf (:at 1578470528279) (:by |yeKFqj7rX) (:text |content)
+                              |t $ %{} :Expr (:at 1578470528279) (:by |yeKFqj7rX)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1706099572590) (:by |yeKFqj7rX) (:text "|\".json")
+                                  |j $ %{} :Expr (:at 1706099587003) (:by |yeKFqj7rX)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1706099591635) (:by |yeKFqj7rX) (:text |->)
+                                      |b $ %{} :Leaf (:at 1578470528279) (:by |yeKFqj7rX) (:text |content)
+                                      |h $ %{} :Leaf (:at 1706099595777) (:by |yeKFqj7rX) (:text |js/JSON.parse)
+                                      |l $ %{} :Leaf (:at 1706099606762) (:by |yeKFqj7rX) (:text |to-calcit-data)
+                                      |o $ %{} :Leaf (:at 1706099609434) (:by |yeKFqj7rX) (:text |tagging-edn)
+                              |u $ %{} :Expr (:at 1578470528279) (:by |yeKFqj7rX)
+                                :data $ {}
+                                  |T $ %{} :Leaf (:at 1706099577713) (:by |yeKFqj7rX) (:text "|\".json5")
+                                  |j $ %{} :Expr (:at 1706099612293) (:by |yeKFqj7rX)
+                                    :data $ {}
+                                      |T $ %{} :Leaf (:at 1706099612293) (:by |yeKFqj7rX) (:text |->)
+                                      |h $ %{} :Expr (:at 1706099707021) (:by |yeKFqj7rX)
+                                        :data $ {}
+                                          |D $ %{} :Leaf (:at 1706099708730) (:by |yeKFqj7rX) (:text |.!parse)
+                                          |T $ %{} :Leaf (:at 1706099705701) (:by |yeKFqj7rX) (:text |JSON5)
+                                          |b $ %{} :Leaf (:at 1706099724162) (:by |yeKFqj7rX) (:text |content)
+                                      |l $ %{} :Leaf (:at 1706099612293) (:by |yeKFqj7rX) (:text |to-calcit-data)
+                                      |o $ %{} :Leaf (:at 1706099612293) (:by |yeKFqj7rX) (:text |tagging-edn)
                       |v $ %{} :Expr (:at 1579851469965) (:by |yeKFqj7rX)
                         :data $ {}
                           |T $ %{} :Leaf (:at 1579851533720) (:by |yeKFqj7rX) (:text |validation)
@@ -192,10 +216,11 @@
                           |j $ %{} :Leaf (:at 1579851544259) (:by |yeKFqj7rX) (:text "|\"passed validation")
                       |v $ %{} :Expr (:at 1579851546738) (:by |yeKFqj7rX)
                         :data $ {}
-                          |T $ %{} :Leaf (:at 1579851548855) (:by |yeKFqj7rX) (:text |println)
-                          |j $ %{} :Expr (:at 1579851716363) (:by |yeKFqj7rX)
+                          |T $ %{} :Leaf (:at 1706099765959) (:by |yeKFqj7rX) (:text |println)
+                          |j $ %{} :Expr (:at 1706099767365) (:by |yeKFqj7rX)
                             :data $ {}
-                              |D $ %{} :Leaf (:at 1579851718842) (:by |yeKFqj7rX) (:text |chalk/red)
+                              |D $ %{} :Leaf (:at 1706099769305) (:by |yeKFqj7rX) (:text |.!red)
+                              |L $ %{} :Leaf (:at 1706099771572) (:by |yeKFqj7rX) (:text |chalk)
                               |T $ %{} :Expr (:at 1579851549911) (:by |yeKFqj7rX)
                                 :data $ {}
                                   |T $ %{} :Leaf (:at 1579851553357) (:by |yeKFqj7rX) (:text |:formatted-message)
@@ -231,7 +256,7 @@
                 |v $ %{} :Expr (:at 1580789328743) (:by |yeKFqj7rX)
                   :data $ {}
                     |j $ %{} :Leaf (:at 1580789328743) (:by |yeKFqj7rX) (:text "|\"chalk")
-                    |r $ %{} :Leaf (:at 1580789328743) (:by |yeKFqj7rX) (:text |:as)
+                    |r $ %{} :Leaf (:at 1706099937315) (:by |yeKFqj7rX) (:text |:default)
                     |v $ %{} :Leaf (:at 1580789328743) (:by |yeKFqj7rX) (:text |chalk)
                 |w $ %{} :Expr (:at 1580789446690) (:by |yeKFqj7rX)
                   :data $ {}
@@ -252,6 +277,11 @@
                     |v $ %{} :Expr (:at 1580789357223) (:by |yeKFqj7rX)
                       :data $ {}
                         |j $ %{} :Leaf (:at 1580789357223) (:by |yeKFqj7rX) (:text |validate-lilac)
+                |z $ %{} :Expr (:at 1706099623126) (:by |yeKFqj7rX)
+                  :data $ {}
+                    |T $ %{} :Leaf (:at 1706099624684) (:by |yeKFqj7rX) (:text "|\"json5")
+                    |b $ %{} :Leaf (:at 1706099702333) (:by |yeKFqj7rX) (:text |:default)
+                    |h $ %{} :Leaf (:at 1706099629694) (:by |yeKFqj7rX) (:text |JSON5)
     |app.main $ %{} :FileEntry
       :defs $ {}
         |*proxy $ %{} :CodeEntry (:doc |)
@@ -1455,10 +1485,20 @@
                           |j $ %{} :Expr (:at 1579851448885) (:by |yeKFqj7rX)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |:type)
-                              |j $ %{} :Expr (:at 1579851448885) (:by |yeKFqj7rX)
+                              |j $ %{} :Expr (:at 1706099872055) (:by |yeKFqj7rX)
                                 :data $ {}
-                                  |T $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |is+)
-                                  |j $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |:file)
+                                  |D $ %{} :Leaf (:at 1706099874237) (:by |yeKFqj7rX) (:text |or+)
+                                  |T $ %{} :Expr (:at 1706099881459) (:by |yeKFqj7rX)
+                                    :data $ {}
+                                      |D $ %{} :Leaf (:at 1706099883144) (:by |yeKFqj7rX) (:text |[])
+                                      |T $ %{} :Expr (:at 1579851448885) (:by |yeKFqj7rX)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |is+)
+                                          |j $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |:file)
+                                      |b $ %{} :Expr (:at 1579851448885) (:by |yeKFqj7rX)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |is+)
+                                          |j $ %{} :Leaf (:at 1706099887931) (:by |yeKFqj7rX) (:text "|\"file")
                           |r $ %{} :Expr (:at 1579851448885) (:by |yeKFqj7rX)
                             :data $ {}
                               |T $ %{} :Leaf (:at 1579851448885) (:by |yeKFqj7rX) (:text |:file)
