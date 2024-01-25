@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.9)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.10)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -68,11 +68,10 @@
                     = pathname "\"/"
                     {} (:code 200) (:message "\"OK")
                       :headers $ merge cors-header schema/json-header
-                      :body $ js/JSON.stringify
-                        js-object
-                          :message $ str "\"This is a JSON mocking server."
-                          :choices $ to-js-data (list-paths routes)
-                        , nil 2
+                      :body $ format-cirru-edn
+                        {}
+                          :message $ str "\"This is a data mocking server."
+                          :choices $ list-paths routes
                   (= :options (:method req))
                     {} (:code 200) (:message "\"OK")
                       :headers $ merge cors-header
@@ -188,11 +187,15 @@
               -> routes .to-list $ mapcat
                 fn (rule)
                   concat
-                    [] $ :path rule
+                    [] $ {}
+                      :path $ :path rule
+                      :methods $ exclude (keys rule) :path
                     ->
                       list-paths $ :next rule
                       map $ fn (x)
-                        str (:path rule) "\"/" x
+                        {}
+                          :path $ str (:path rule) "\"/" (:path x)
+                          :methods $ :methods x
         |match-path $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn match-path (segments rule-path) (; println "\"matching" segments rule-path)

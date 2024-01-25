@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.9)
+  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.10)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -448,29 +448,24 @@
                                   |T $ %{} :Leaf (:at 1578473191852) (:by |yeKFqj7rX) (:text |:body)
                                   |j $ %{} :Expr (:at 1580795765555) (:by |yeKFqj7rX)
                                     :data $ {}
-                                      |D $ %{} :Leaf (:at 1580795770301) (:by |yeKFqj7rX) (:text |js/JSON.stringify)
+                                      |D $ %{} :Leaf (:at 1706153196367) (:by |yeKFqj7rX) (:text |format-cirru-edn)
                                       |T $ %{} :Expr (:at 1580795626304) (:by |yeKFqj7rX)
                                         :data $ {}
-                                          |D $ %{} :Leaf (:at 1673283883893) (:by |yeKFqj7rX) (:text |js-object)
+                                          |D $ %{} :Leaf (:at 1706153200088) (:by |yeKFqj7rX) (:text |{})
                                           |L $ %{} :Expr (:at 1580795627712) (:by |yeKFqj7rX)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1580795630369) (:by |yeKFqj7rX) (:text |:message)
                                               |j $ %{} :Expr (:at 1580795638093) (:by |yeKFqj7rX)
                                                 :data $ {}
                                                   |T $ %{} :Leaf (:at 1580795638093) (:by |yeKFqj7rX) (:text |str)
-                                                  |j $ %{} :Leaf (:at 1580795638093) (:by |yeKFqj7rX) (:text "|\"This is a JSON mocking server.")
+                                                  |j $ %{} :Leaf (:at 1706153259629) (:by |yeKFqj7rX) (:text "|\"This is a data mocking server.")
                                           |f $ %{} :Expr (:at 1580795640420) (:by |yeKFqj7rX)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1580795647071) (:by |yeKFqj7rX) (:text |:choices)
-                                              |j $ %{} :Expr (:at 1673283898118) (:by |yeKFqj7rX)
+                                              |j $ %{} :Expr (:at 1580795650606) (:by |yeKFqj7rX)
                                                 :data $ {}
-                                                  |D $ %{} :Leaf (:at 1673283901855) (:by |yeKFqj7rX) (:text |to-js-data)
-                                                  |T $ %{} :Expr (:at 1580795650606) (:by |yeKFqj7rX)
-                                                    :data $ {}
-                                                      |T $ %{} :Leaf (:at 1580795653321) (:by |yeKFqj7rX) (:text |list-paths)
-                                                      |j $ %{} :Leaf (:at 1580795656878) (:by |yeKFqj7rX) (:text |routes)
-                                      |j $ %{} :Leaf (:at 1580795773519) (:by |yeKFqj7rX) (:text |nil)
-                                      |r $ %{} :Leaf (:at 1580795773824) (:by |yeKFqj7rX) (:text |2)
+                                                  |T $ %{} :Leaf (:at 1580795653321) (:by |yeKFqj7rX) (:text |list-paths)
+                                                  |j $ %{} :Leaf (:at 1580795656878) (:by |yeKFqj7rX) (:text |routes)
                       |J $ %{} :Expr (:at 1585044064448) (:by |yeKFqj7rX)
                         :data $ {}
                           |T $ %{} :Expr (:at 1585044069419) (:by |yeKFqj7rX)
@@ -1276,10 +1271,27 @@
                               |j $ %{} :Expr (:at 1580795719867) (:by |yeKFqj7rX)
                                 :data $ {}
                                   |D $ %{} :Leaf (:at 1580795720470) (:by |yeKFqj7rX) (:text |[])
-                                  |T $ %{} :Expr (:at 1580795708291) (:by |yeKFqj7rX)
+                                  |T $ %{} :Expr (:at 1706151997041) (:by |yeKFqj7rX)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1580795709297) (:by |yeKFqj7rX) (:text |:path)
-                                      |j $ %{} :Leaf (:at 1580795711316) (:by |yeKFqj7rX) (:text |rule)
+                                      |D $ %{} :Leaf (:at 1706151997694) (:by |yeKFqj7rX) (:text |{})
+                                      |T $ %{} :Expr (:at 1580795708291) (:by |yeKFqj7rX)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1580795709297) (:by |yeKFqj7rX) (:text |:path)
+                                          |j $ %{} :Expr (:at 1706152966876) (:by |yeKFqj7rX)
+                                            :data $ {}
+                                              |D $ %{} :Leaf (:at 1706152968975) (:by |yeKFqj7rX) (:text |:path)
+                                              |T $ %{} :Leaf (:at 1580795711316) (:by |yeKFqj7rX) (:text |rule)
+                                      |b $ %{} :Expr (:at 1706151999792) (:by |yeKFqj7rX)
+                                        :data $ {}
+                                          |T $ %{} :Leaf (:at 1706152002490) (:by |yeKFqj7rX) (:text |:methods)
+                                          |b $ %{} :Expr (:at 1706153269598) (:by |yeKFqj7rX)
+                                            :data $ {}
+                                              |D $ %{} :Leaf (:at 1706153284131) (:by |yeKFqj7rX) (:text |exclude)
+                                              |T $ %{} :Expr (:at 1706152002669) (:by |yeKFqj7rX)
+                                                :data $ {}
+                                                  |D $ %{} :Leaf (:at 1706152005497) (:by |yeKFqj7rX) (:text |keys)
+                                                  |T $ %{} :Leaf (:at 1706152003226) (:by |yeKFqj7rX) (:text |rule)
+                                              |b $ %{} :Leaf (:at 1706153273694) (:by |yeKFqj7rX) (:text |:path)
                               |r $ %{} :Expr (:at 1580795781422) (:by |yeKFqj7rX)
                                 :data $ {}
                                   |D $ %{} :Leaf (:at 1673283894334) (:by |yeKFqj7rX) (:text |->)
@@ -1299,15 +1311,31 @@
                                           |j $ %{} :Expr (:at 1580795789124) (:by |yeKFqj7rX)
                                             :data $ {}
                                               |T $ %{} :Leaf (:at 1580795789471) (:by |yeKFqj7rX) (:text |x)
-                                          |r $ %{} :Expr (:at 1580795790329) (:by |yeKFqj7rX)
+                                          |r $ %{} :Expr (:at 1706151880110) (:by |yeKFqj7rX)
                                             :data $ {}
-                                              |T $ %{} :Leaf (:at 1580795791148) (:by |yeKFqj7rX) (:text |str)
-                                              |j $ %{} :Expr (:at 1580795792326) (:by |yeKFqj7rX)
+                                              |D $ %{} :Leaf (:at 1706151880702) (:by |yeKFqj7rX) (:text |{})
+                                              |T $ %{} :Expr (:at 1706151883855) (:by |yeKFqj7rX)
                                                 :data $ {}
-                                                  |T $ %{} :Leaf (:at 1580795793053) (:by |yeKFqj7rX) (:text |:path)
-                                                  |j $ %{} :Leaf (:at 1580795794007) (:by |yeKFqj7rX) (:text |rule)
-                                              |n $ %{} :Leaf (:at 1580795802928) (:by |yeKFqj7rX) (:text "|\"/")
-                                              |r $ %{} :Leaf (:at 1580795794987) (:by |yeKFqj7rX) (:text |x)
+                                                  |D $ %{} :Leaf (:at 1706151885418) (:by |yeKFqj7rX) (:text |:path)
+                                                  |T $ %{} :Expr (:at 1580795790329) (:by |yeKFqj7rX)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1580795791148) (:by |yeKFqj7rX) (:text |str)
+                                                      |j $ %{} :Expr (:at 1580795792326) (:by |yeKFqj7rX)
+                                                        :data $ {}
+                                                          |T $ %{} :Leaf (:at 1580795793053) (:by |yeKFqj7rX) (:text |:path)
+                                                          |j $ %{} :Leaf (:at 1580795794007) (:by |yeKFqj7rX) (:text |rule)
+                                                      |n $ %{} :Leaf (:at 1580795802928) (:by |yeKFqj7rX) (:text "|\"/")
+                                                      |r $ %{} :Expr (:at 1706152532268) (:by |yeKFqj7rX)
+                                                        :data $ {}
+                                                          |D $ %{} :Leaf (:at 1706152534066) (:by |yeKFqj7rX) (:text |:path)
+                                                          |T $ %{} :Leaf (:at 1580795794987) (:by |yeKFqj7rX) (:text |x)
+                                              |b $ %{} :Expr (:at 1706152541244) (:by |yeKFqj7rX)
+                                                :data $ {}
+                                                  |T $ %{} :Leaf (:at 1706152542940) (:by |yeKFqj7rX) (:text |:methods)
+                                                  |b $ %{} :Expr (:at 1706152543364) (:by |yeKFqj7rX)
+                                                    :data $ {}
+                                                      |T $ %{} :Leaf (:at 1706152554827) (:by |yeKFqj7rX) (:text |:methods)
+                                                      |b $ %{} :Leaf (:at 1706152556027) (:by |yeKFqj7rX) (:text |x)
         |match-path $ %{} :CodeEntry (:doc |)
           :code $ %{} :Expr (:at 1578371634874) (:by |yeKFqj7rX)
             :data $ {}
