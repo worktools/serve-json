@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.10)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.11)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -68,10 +68,11 @@
                     = pathname "\"/"
                     {} (:code 200) (:message "\"OK")
                       :headers $ merge cors-header schema/json-header
-                      :body $ format-cirru-edn
-                        {}
+                      :body $ js/JSON.stringify
+                        to-js-data $ {}
                           :message $ str "\"This is a data mocking server."
                           :choices $ list-paths routes
+                        , nil 2
                   (= :options (:method req))
                     {} (:code 200) (:message "\"OK")
                       :headers $ merge cors-header
@@ -114,11 +115,20 @@
                                 or (:delay info) 0
                                 fn () $ fs/readFile mock-path "\"utf8"
                                   fn (err content)
-                                    send! $ {}
-                                      :code $ or (:code info) 200
-                                      :message "\"OK"
-                                      :headers $ merge cors-header schema/json-header
-                                      :body content
+                                    try
+                                      send! $ {}
+                                        :code $ or (:code info) 200
+                                        :message "\"OK"
+                                        :headers $ merge cors-header schema/json-header
+                                        :body $ js/JSON.stringify (.!parse JSON5 content) nil 2
+                                      fn (e) (js/console.error e)
+                                        send! $ {} (:code 500) (:message "\"Error")
+                                          :headers $ merge cors-header schema/json-header
+                                          :body $ js/JSON.stringify
+                                            js-object (:message "\"Error")
+                                              :msg $ str e
+                                              :error e
+                                            , nil 2
                   true $ do
                     println "\"Bad result for rule" pathname (:method req) info
                     {} (:code 400) (:message "\"Unknown request")
@@ -149,6 +159,7 @@
             app.path :refer $ find-match-rule list-paths
             app.config :refer $ *configs load-config!
             "\"http-proxy" :default http-proxy
+            "\"json5" :default JSON5
     |app.path $ %{} :FileEntry
       :defs $ {}
         |find-match-rule $ %{} :CodeEntry (:doc |)
@@ -189,7 +200,8 @@
                   concat
                     [] $ {}
                       :path $ :path rule
-                      :methods $ exclude (keys rule) :path
+                      :methods $ .to-list
+                        exclude (keys rule) :path
                     ->
                       list-paths $ :next rule
                       map $ fn (x)
@@ -230,7 +242,7 @@
           :code $ quote
             deflilac lilac-router+ () $ record+
               {}
-                :port $ number+
+                :port $ optional+ (number+)
                 :fallback-host $ optional+ (string+)
                 :routes $ list+ (lilac-router-path+)
               {} $ :check-keys? true

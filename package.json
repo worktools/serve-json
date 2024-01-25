@@ -1,6 +1,6 @@
 {
   "name": "@worktools/serve-json",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "bin": {
     "serve-json": "./main.mjs"
   },
