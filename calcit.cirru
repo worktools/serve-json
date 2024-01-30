@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.11)
+  :configs $ {} (:init-fn |app.main/main!) (:local-storage-key |calcit-storage) (:port 6001) (:reload-fn |app.main/reload!) (:storage-key |calcit.cirru) (:version |0.0.12)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -393,11 +393,12 @@
                                   |T $ %{} :Leaf (:at 1583306809213) (:by |yeKFqj7rX) (:text "|\"Access-Control-Allow-Origin")
                                   |j $ %{} :Expr (:at 1583724855075) (:by |yeKFqj7rX)
                                     :data $ {}
-                                      |T $ %{} :Leaf (:at 1583724855075) (:by |yeKFqj7rX) (:text |:origin)
+                                      |T $ %{} :Leaf (:at 1706515095240) (:by |yeKFqj7rX) (:text |get)
                                       |j $ %{} :Expr (:at 1583724855075) (:by |yeKFqj7rX)
                                         :data $ {}
                                           |T $ %{} :Leaf (:at 1583724855075) (:by |yeKFqj7rX) (:text |:headers)
                                           |j $ %{} :Leaf (:at 1583724855075) (:by |yeKFqj7rX) (:text |req)
+                                      |n $ %{} :Leaf (:at 1706515097656) (:by |yeKFqj7rX) (:text "|\"origin")
                               |v $ %{} :Expr (:at 1585045236549) (:by |yeKFqj7rX)
                                 :data $ {}
                                   |T $ %{} :Leaf (:at 1585045238878) (:by |yeKFqj7rX) (:text "|\"Access-Control-Allow-Headers")

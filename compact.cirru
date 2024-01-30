@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.11)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.12)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -61,7 +61,7 @@
                   info $ get (:rule rule-result) (:method req)
                   file-type $ :type info
                   cors-header $ {} ("\"Access-Control-Allow-Credentials" true) ("\"Access-Control-Allow-Methods" "\"PUT,POST,DELETE")
-                    "\"Access-Control-Allow-Origin" $ :origin (:headers req)
+                    "\"Access-Control-Allow-Origin" $ get (:headers req) "\"origin"
                     "\"Access-Control-Allow-Headers" "\"Content-Type"
                 ; println "\"find rule" pathname rule-result info $ :method req
                 cond

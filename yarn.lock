@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@calcit/procs@^0.8.16":
-  version "0.8.16"
-  resolved "https://registry.npmmirror.com/@calcit/procs/-/procs-0.8.16.tgz#fe841ca14b110ff809e6856ef1c5d3800f002713"
-  integrity sha512-oSx2lWL/Jmo2JRHRln/WHiXI9MdZJhGbKKpBhPY8aBsiQ4DGZgYQnQK76upSEHBGjVifOiGMVHy3d0FviWWbHA==
+"@calcit/procs@^0.8.19":
+  version "0.8.19"
+  resolved "https://registry.npmmirror.com/@calcit/procs/-/procs-0.8.19.tgz#399ca0eb7b8a2c3bc6de39ced8f5b2a04281143b"
+  integrity sha512-FC+Nx+kdOGkHettUz2sd6EnuH5UovmN+8j7VhPJWzvYjHzEQRjz51IlqOxdoXxxjZ0IuMoehvNAJglan0iCA0g==
   dependencies:
     "@calcit/ternary-tree" "0.0.23"
     "@cirru/parser.ts" "^0.0.6"
@@ -183,10 +183,10 @@ globule@^1.0.0:
     lodash "^4.17.21"
     minimatch "~3.0.2"
 
-got@^12.1.0:
-  version "12.6.1"
-  resolved "https://registry.npmmirror.com/got/-/got-12.6.1.tgz#8869560d1383353204b5a9435f782df9c091f549"
-  integrity sha512-mThBblvlAF1d4O5oqyvN+ZxLAYwIJK7bpMxgYqPD9okW0C3qm5FFn7k811QrcuEBwaogR3ngOFoCfs6mRv7teQ==
+got@^13.0.0:
+  version "13.0.0"
+  resolved "https://registry.npmmirror.com/got/-/got-13.0.0.tgz#a2402862cef27a5d0d1b07c0fb25d12b58175422"
+  integrity sha512-XfBk1CxOOScDcMr9O1yKkNaQyy865NbYs+F7dr4H0LZMVgCj2Le59k6PqbNHoL5ToeaEQUYh6c6yMfVcc6SJxA==
   dependencies:
     "@sindresorhus/is" "^5.2.0"
     "@szmarczak/http-timer" "^5.0.1"
@@ -262,12 +262,12 @@ keyv@^4.5.3:
   dependencies:
     json-buffer "3.0.1"
 
-latest-version@^7.0.0:
-  version "7.0.0"
-  resolved "https://registry.npmmirror.com/latest-version/-/latest-version-7.0.0.tgz#843201591ea81a4d404932eeb61240fe04e9e5da"
-  integrity sha512-KvNT4XqAMzdcL6ka6Tl3i2lYeFDgXNCuIX+xNx6ZMVR1dFq+idXd9FLKNMOIx0t9mJ9/HudyX4oZWXZQ0UJHeg==
+latest-version@^8.0.0:
+  version "8.0.0"
+  resolved "https://registry.npmmirror.com/latest-version/-/latest-version-8.0.0.tgz#1b2dcfe633ec1ffd2382c69a1bc3a855cbc5c2c6"
+  integrity sha512-FvwzZ43AtFdin94Mmuu/Sa+2vpDKbaDarz/MZU2EuDU7B9aGWq+c6M7EccBD7XJGnEwBmSDRRYabkvnEKqqksw==
   dependencies:
-    package-json "^8.1.0"
+    package-json "^9.0.0"
 
 lodash@^4.17.21:
   version "4.17.21"
@@ -332,15 +332,15 @@ p-cancelable@^3.0.0:
   resolved "https://registry.npmmirror.com/p-cancelable/-/p-cancelable-3.0.0.tgz#63826694b54d61ca1c20ebcb6d3ecf5e14cd8050"
   integrity sha512-mlVgR3PGuzlo0MmTdk4cXqXWlwQDLnONTAg6sm62XkMJEiRxN3GL3SffkYvqwonbkJBcrI7Uvv5Zh9yjvn2iUw==
 
-package-json@^8.1.0:
-  version "8.1.1"
-  resolved "https://registry.npmmirror.com/package-json/-/package-json-8.1.1.tgz#3e9948e43df40d1e8e78a85485f1070bf8f03dc8"
-  integrity sha512-cbH9IAIJHNj9uXi196JVsRlt7cHKak6u/e6AkL/bkRelZ7rlL3X1YKxsZwa36xipOEKAsdtmaG6aAJoM1fx2zA==
+package-json@^9.0.0:
+  version "9.0.0"
+  resolved "https://registry.npmmirror.com/package-json/-/package-json-9.0.0.tgz#c8f08bed55780f0a4dcd73d93a8ccadd5829022e"
+  integrity sha512-vGgkl6BR8SJUcOdhj49/17fqYpBYr4fAlbBA3we5j548q114UAafKBEVck85Kk2HKhVzWGIAVybFpJ9LesJY6w==
   dependencies:
-    got "^12.1.0"
-    registry-auth-token "^5.0.1"
-    registry-url "^6.0.0"
-    semver "^7.3.7"
+    got "^13.0.0"
+    registry-auth-token "^5.0.2"
+    registry-url "^6.0.1"
+    semver "^7.5.4"
 
 path-is-absolute@^1.0.0:
   version "1.0.1"
@@ -367,14 +367,14 @@ rc@1.2.8:
     minimist "^1.2.0"
     strip-json-comments "~2.0.1"
 
-registry-auth-token@^5.0.1:
+registry-auth-token@^5.0.2:
   version "5.0.2"
   resolved "https://registry.npmmirror.com/registry-auth-token/-/registry-auth-token-5.0.2.tgz#8b026cc507c8552ebbe06724136267e63302f756"
   integrity sha512-o/3ikDxtXaA59BmZuZrJZDJv8NMDGSj+6j6XaeBmHw8eY1i1qd9+6H+LjVvQXx3HN6aRCGa1cUdJ9RaJZUugnQ==
   dependencies:
     "@pnpm/npm-conf" "^2.1.0"
 
-registry-url@^6.0.0:
+registry-url@^6.0.1:
   version "6.0.1"
   resolved "https://registry.npmmirror.com/registry-url/-/registry-url-6.0.1.tgz#056d9343680f2f64400032b1e199faa692286c58"
   integrity sha512-+crtS5QjFRqFCoQmvGduwYWEBng99ZvmFvF+cUJkGYF1L1BfU8C6Zp9T7f5vPAwyLkUExpvK+ANVZmGU49qi4Q==
@@ -398,7 +398,7 @@ responselike@^3.0.0:
   dependencies:
     lowercase-keys "^3.0.0"
 
-semver@^7.3.7:
+semver@^7.5.4:
   version "7.5.4"
   resolved "https://registry.npmmirror.com/semver/-/semver-7.5.4.tgz#483986ec4ed38e1c6c48c34894a9182dbff68a6e"
   integrity sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==
