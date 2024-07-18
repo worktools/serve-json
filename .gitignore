@@ -16,3 +16,5 @@ js-out
 
 
 config
+
+.DS_Store
