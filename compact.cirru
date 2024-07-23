@@ -1,6 +1,6 @@
 
 {} (:package |app)
-  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.12)
+  :configs $ {} (:init-fn |app.main/main!) (:reload-fn |app.main/reload!) (:version |0.0.13)
     :modules $ [] |skir/ |lilac/
   :entries $ {}
   :files $ {}
@@ -59,7 +59,6 @@
                   segments $ split-path pathname
                   rule-result $ find-match-rule segments routes
                   info $ get (:rule rule-result) (:method req)
-                  file-type $ :type info
                   cors-header $ {} ("\"Access-Control-Allow-Credentials" true) ("\"Access-Control-Allow-Methods" "\"PUT,POST,DELETE")
                     "\"Access-Control-Allow-Origin" $ get (:headers req) "\"origin"
                     "\"Access-Control-Allow-Headers" "\"Content-Type"
@@ -99,36 +98,25 @@
                               :message $ str "\"No matching path for " pathname
                               :reason $ to-js-data rule-result
                             , nil 2
-                  (file? file-type)
+                  (and (map? info) (file? (:type info)))
                     fn (send!)
                       let
                           mock-path $ :file info
-                        fs/access mock-path $ fn (err)
-                          if (some? err)
-                            do (println "\"Need file" mock-path)
-                              send! $ {} (:code 404) (:message "\"Unknown request")
-                                :headers $ merge cors-header schema/html-header
-                                :body $ str mock-path "\" not found"
-                            do
-                              println $ .!gray chalk "\"sending" mock-path "\"to" pathname
-                              delay!
-                                or (:delay info) 0
-                                fn () $ fs/readFile mock-path "\"utf8"
-                                  fn (err content)
-                                    try
-                                      send! $ {}
-                                        :code $ or (:code info) 200
-                                        :message "\"OK"
-                                        :headers $ merge cors-header schema/json-header
-                                        :body $ js/JSON.stringify (.!parse JSON5 content) nil 2
-                                      fn (e) (js/console.error e)
-                                        send! $ {} (:code 500) (:message "\"Error")
-                                          :headers $ merge cors-header schema/json-header
-                                          :body $ js/JSON.stringify
-                                            js-object (:message "\"Error")
-                                              :msg $ str e
-                                              :error e
-                                            , nil 2
+                        respond-with-file! mock-path pathname (:code info) (:delay info) cors-header send!
+                  (tuple? info)
+                    tag-match info
+                        :file code mock-path
+                        fn (send!) (respond-with-file! mock-path pathname code 0 cors-header send!)
+                      (:file code mock-path delay)
+                        fn (send!) (respond-with-file! mock-path pathname code delay cors-header send!)
+                      _ $ do (eprintln 400 info)
+                        {} (:code 400) (:message "\"Unknown config")
+                          :headers $ merge cors-header schema/json-header
+                          :body $ js/JSON.stringify
+                            js-object
+                              :message $ str "\"No matching path for " pathname
+                              :reason $ to-js-data info
+                            , nil 2
                   true $ do
                     println "\"Bad result for rule" pathname (:method req) info
                     {} (:code 400) (:message "\"Unknown request")
@@ -138,12 +126,12 @@
                         :info $ to-js-data info
         |main! $ %{} :CodeEntry (:doc |)
           :code $ quote
-            defn main! () (; println @*configs) (load-config!)
+            defn main! () (; println @*configs) (load-console-formatter!) (load-config!)
               skir/create-server!
                 fn (a b) (handle-request! a b)
                 {} $ :port
                   or (:port @*configs) 7800
-              check-version!
+              ; check-version!
         |on-proxy-error $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn on-proxy-error (err req res) (js/console.log err)
@@ -151,6 +139,34 @@
         |reload! $ %{} :CodeEntry (:doc |)
           :code $ quote
             defn reload! () $ println "\"Reloaded."
+        |respond-with-file! $ %{} :CodeEntry (:doc |)
+          :code $ quote
+            defn respond-with-file! (mock-path pathname code delay cors-header send!)
+              fs/access mock-path $ fn (err)
+                if (some? err)
+                  do (println "\"Need file" mock-path)
+                    send! $ {} (:code 404) (:message "\"Unknown request")
+                      :headers $ merge cors-header schema/html-header
+                      :body $ str mock-path "\" not found"
+                  do
+                    println $ .!gray chalk "\"sending" mock-path "\"to" pathname
+                    delay! (or delay 0)
+                      fn () $ fs/readFile mock-path "\"utf8"
+                        fn (err content)
+                          try
+                            send! $ {}
+                              :code $ or code 200
+                              :message "\"OK"
+                              :headers $ merge cors-header schema/json-header
+                              :body $ js/JSON.stringify (.!parse JSON5 content) nil 2
+                            fn (e) (js/console.error e)
+                              send! $ {} (:code 500) (:message "\"Error")
+                                :headers $ merge cors-header schema/json-header
+                                :body $ js/JSON.stringify
+                                  js-object (:message "\"Error")
+                                    :msg $ str e
+                                    :error e
+                                  , nil 2
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.main $ :require (skir.core :as skir) ("\"node:fs" :as fs) ("\"node:path" :as path) ("\"latest-version" :as latest-version) ("\"chalk" :default chalk)
@@ -230,14 +246,17 @@
         |lilac-method+ $ %{} :CodeEntry (:doc |)
           :code $ quote
             deflilac lilac-method+ () $ optional+
-              record+
-                {}
-                  :code $ optional+ (number+)
-                  :type $ or+
-                    [] (is+ :file) (is+ "\"file")
-                  :file $ string+
-                  :delay $ optional+ (number+)
-                {} $ :check-keys? true
+              or+ $ []
+                record+
+                  {}
+                    :code $ optional+ (number+)
+                    :type $ or+
+                      [] (is+ :file) (is+ "\"file")
+                    :file $ string+
+                    :delay $ optional+ (number+)
+                  {} $ :check-keys? true
+                tuple+ $ :: (tag+) (number+) (string+)
+                tuple+ $ :: (tag+) (number+) (string+) (number+)
         |lilac-router+ $ %{} :CodeEntry (:doc |)
           :code $ quote
             deflilac lilac-router+ () $ record+
@@ -261,7 +280,7 @@
       :ns $ %{} :CodeEntry (:doc |)
         :code $ quote
           ns app.router $ :require
-            lilac.core :refer $ validate-lilac number+ string+ keyword+ boolean+ nil+ list+ map+ set+ deflilac or+ and+ not+ custom+ is+ optional+ record+
+            lilac.core :refer $ validate-lilac number+ string+ keyword+ boolean+ nil+ list+ map+ set+ deflilac or+ and+ not+ custom+ is+ optional+ record+ tuple+ tag+
     |app.schema $ %{} :FileEntry
       :defs $ {}
         |html-header $ %{} :CodeEntry (:doc |)
