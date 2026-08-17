@@ -17,11 +17,11 @@ jobs:
         cache: yarn
         registry-url: https://registry.npmjs.org/
 
-    - uses: calcit-lang/setup-cr@0.0.7
+    - uses: calcit-lang/setup-cr@0.0.9
       with:
         bundler: false
 
-    - run: yarn && caps --ci && cr -1 js
+    - run: yarn && caps --ci && cr js
 
     - run: npm publish
       env:
