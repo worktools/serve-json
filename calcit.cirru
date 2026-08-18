@@ -45,7 +45,9 @@
                     |.json $ -> content js/JSON.parse to-calcit-data tagging-edn
                     |.json5 $ -> (.!parse JSON5 content) to-calcit-data tagging-edn
                   validation $ validate-lilac result (lilac-router+)
-                if (option:unwrap-or (&map:get validation :ok?) false) (println "|passed validation")
+                if
+                  option:unwrap-or (&map:get validation :ok?) false
+                  println "|passed validation"
                   println $ .!red chalk
                     option:unwrap-or (&map:get validation :formatted-message) |unknown-error
                 println "|Loaded config from" config-path
@@ -79,8 +81,7 @@
                   request-method $ option:unwrap-or (&map:get req :method) :get
                   request-headers $ option:unwrap-or (&map:get req :headers) {}
                   original-request $ option:unwrap-or (&map:get req :original-request) {}
-                  pathname $ first
-                    .split request-url |?
+                  pathname $ first (.split request-url |?)
                   segments $ split-path pathname
                   rule-result $ find-match-rule segments routes
                   matched-rule $ option:unwrap-or (&map:get rule-result :rule) {}
@@ -146,8 +147,7 @@
                               :message $ str "|No matching path for " pathname
                               :reason $ to-js-data info
                             , nil 2
-                  true $ do
-                    println "|Bad result for rule" pathname request-method info
+                  true $ do (println "|Bad result for rule" pathname request-method info)
                     {} (:code 400) (:message "|Unknown request")
                       :headers $ merge cors-header schema/json-header
                       :body $ js-object (:code 400) (:message "|Unknown rule")
@@ -166,7 +166,7 @@
                   port $ option:unwrap-or (&map:get config :port) 7800
                 skir/create-server!
                   fn (a b) (handle-request! a b)
-                  {} (:port port)
+                  {} $ :port port
               ; check-version!
           :examples $ []
           :schema $ :: 'Fn
@@ -242,11 +242,12 @@
                       ; println |compare segments |to cursor
                       if (empty? xs) nil $ let
                           cursor-path $ option:unwrap-or (&map:get cursor :path) |
-                          result $ match-path segments
-                            split-path cursor-path
+                          result $ match-path segments (split-path cursor-path)
                         ; println |result result
                         ; println |cursor cursor
-                        if (option:unwrap-or (&map:get result :matches?) false) (assoc result :rule cursor)
+                        if
+                          option:unwrap-or (&map:get result :matches?) false
+                          assoc result :rule cursor
                           recur $ rest xs
                 ; println "|current rule" current-match
                 if (nil? current-match)
@@ -257,8 +258,7 @@
                       matched-rule $ option:unwrap-or (&map:get current-match :rule) {}
                       remaining-segments $ option:unwrap-or (&map:get current-match :rest) []
                       next-rules $ option:unwrap-or (&map:get matched-rule :next) {}
-                    if
-                      empty? remaining-segments
+                    if (empty? remaining-segments)
                       {} (:ok? true) (:rule matched-rule)
                       recur remaining-segments next-rules
           :examples $ []
@@ -285,15 +285,17 @@
                       list-paths $ option:unwrap-or (&map:get rule :next) {}
                       map $ fn (x)
                         {}
-                          :path $ str (option:unwrap-or (&map:get rule :path) |) |/
-                            (option:unwrap-or (&map:get x :path) |)
+                          :path $ str
+                            option:unwrap-or (&map:get rule :path) |
+                            , |/
+                              (option:unwrap-or (&map:get x :path) |)
                           :methods $ option:unwrap-or (&map:get x :methods) []
           :examples $ []
           :schema $ :: 'Dynamic
         |match-path $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn match-path (segments rule-path) (; println |matching segments rule-path)
-                  if (empty? rule-path)
+              if (empty? rule-path)
                 {} (:matches? true) (:rest segments)
                 cond
                     empty? segments
