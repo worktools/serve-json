@@ -14,7 +14,6 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: yarn
         registry-url: https://registry.npmjs.org/
 
     - run: corepack enable
@@ -23,7 +22,7 @@ jobs:
       with:
         bundler: false
 
-    - run: yarn && caps --ci && cr js
+    - run: yarn install --immutable && caps --ci && cr js
 
     - run: npm publish
       env:
