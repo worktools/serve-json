@@ -15,10 +15,11 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-        cache: 'yarn'
 
-    - uses: calcit-lang/setup-cr@0.0.7
+    - run: corepack enable
+
+    - uses: calcit-lang/setup-cr@0.0.9
       with:
         bundler: false
 
-    - run: caps --ci && cr -1 js
+    - run: yarn install --immutable && caps --ci && cr js
