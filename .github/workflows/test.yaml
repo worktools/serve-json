@@ -17,6 +17,8 @@ jobs:
         node-version: 20
         cache: 'yarn'
 
+    - run: corepack enable
+
     - uses: calcit-lang/setup-cr@0.0.9
       with:
         bundler: false

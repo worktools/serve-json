@@ -1,6 +1,7 @@
 {
   "name": "@worktools/serve-json",
   "version": "0.0.13",
+  "packageManager": "yarn@4.12.0",
   "bin": "./main.mjs",
   "repository": "git@github.com:mvc-works/serve-json.git",
   "author": "jiyinyiyong <jiyinyiyong@gmail.com>",
