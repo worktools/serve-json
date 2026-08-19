@@ -18,3 +18,5 @@ js-out
 config
 
 .DS_Store
+
+.yarn/*.gz
