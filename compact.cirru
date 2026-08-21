@@ -103,7 +103,7 @@
                       let
                           mock-path $ :file info
                         respond-with-file! mock-path pathname (:code info) (:delay info) cors-header send!
-                  (tuple? info)
+                  (enum? info)
                     tag-match info
                         :file code mock-path
                         fn (send!) (respond-with-file! mock-path pathname code 0 cors-header send!)
