@@ -11,18 +11,25 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
-        node-version: 20
+        node-version: 24
         registry-url: https://registry.npmjs.org/
 
-    - run: corepack enable
+    - run: |
+        corepack enable
+        corepack prepare yarn@4.12.0 --activate
+        yarn --version
 
-    - uses: calcit-lang/setup-cr@0.0.9
-      with:
-        bundler: false
+    - uses: calcit-lang/setup-calcit@v1
 
-    - run: yarn install --immutable && caps --ci && cr js
+    - run: |
+        caps --ci
+        calcit calcit.cirru edit format
+        git diff --exit-code -- calcit.cirru
+        calcit calcit.cirru --check-only
+        calcit calcit.cirru js
+        yarn install --immutable
 
     - run: npm publish
       env:
