@@ -6,18 +6,18 @@
       :modules $ [] |skir/ |lilac/
       :type-slots $ {}
   :files $ {}
-    |app.config $ %{} 'FileEntry
+    'app.config $ %{} 'FileEntry
       :defs $ {}
-        |*configs $ %{} 'CodeEntry (:doc |)
+        '*configs $ %{} 'CodeEntry (:doc |)
           :code $ quote (defatom *configs nil)
           :examples $ []
           :schema $ :: 'Dynamic
-        |detect-config-file! $ %{} 'CodeEntry (:doc |)
+        'detect-config-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn detect-config-file! () $ if (fs/existsSync |config.cirru) |config.cirru nil
           :examples $ []
           :schema $ :: 'Dynamic
-        |load-config! $ %{} 'CodeEntry (:doc |)
+        'load-config! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn load-config! () $ let
                 argv $ unsafe-coerce js/process.argv JsObject
@@ -34,7 +34,7 @@
             {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |load-config-from-file! $ %{} 'CodeEntry (:doc |)
+        'load-config-from-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn load-config-from-file! (config-path)
               let
@@ -64,33 +64,37 @@
             app.router :refer $ lilac-router+
             lilac.core :refer $ validate-lilac
             |json5 :default JSON5
-    |app.main $ %{} 'FileEntry
+    'app.main $ %{} 'FileEntry
       :defs $ {}
-        |*proxy $ %{} 'CodeEntry (:doc |)
+        '*proxy $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defatom *proxy $ .!createProxy http-proxy (js-object)
           :examples $ []
           :schema $ :: 'Dynamic
-        |handle-request! $ %{} 'CodeEntry (:doc |)
+        'handle-request! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn handle-request! (req res)
               let
-                  config $ option:unwrap-or @*configs {}
-                  routes $ option:unwrap-or (&map:get config :routes) {}
+                  config $ or @*configs {}
+                  routes $ unsafe-coerce
+                    option:unwrap-or (&map:get config :routes) []
+                    , List
                   fallback-host $ option:unwrap-or (&map:get config :fallback-host) nil
                   request-url $ option:unwrap-or (&map:get req :url) |
                   request-method $ option:unwrap-or (&map:get req :method) :get
                   request-headers $ option:unwrap-or (&map:get req :headers) {}
                   original-request $ option:unwrap-or (&map:get req :original-request) {}
-                  pathname $ first (.split request-url |?)
+                  pathname $ option:unwrap-or
+                    first $ .split request-url |?
+                    , |
                   segments $ split-path pathname
                   rule-result $ find-match-rule segments routes
                   matched-rule $ option:unwrap-or (&map:get rule-result :rule) {}
                   rule-ok? $ option:unwrap-or (&map:get rule-result :ok?) false
                   info $ option:unwrap-or (get matched-rule request-method) nil
-                  cors-header $ {} (|Access-Control-Allow-Credentials true) (|Access-Control-Allow-Methods |PUT,POST,DELETE)
-                    |Access-Control-Allow-Origin $ option:unwrap-or (&map:get request-headers |origin) |
-                    |Access-Control-Allow-Headers |Content-Type
+                  cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
+                    :Access-Control-Allow-Origin $ option:unwrap-or (get request-headers |origin) |
+                    :Access-Control-Allow-Headers |Content-Type
                 ; println "|find rule" pathname rule-result info request-method
                 cond
                     = pathname |/
@@ -113,7 +117,7 @@
                       do
                         println $ .!gray chalk "|proxy to" fallback-host pathname
                         try
-                          .!web @*proxy original-request res $ js-object (:target fallback-host)
+                          .!web (unsafe-coerce @*proxy JsObject) original-request res $ js-object (:target fallback-host)
                           fn (err)
                             {} (:code 500) (:message "|Failed to access fallback host")
                               :headers $ merge cors-header schema/json-header
@@ -127,15 +131,15 @@
                               :message $ str "|No matching path for " pathname
                               :reason $ to-js-data rule-result
                             , nil 2
-                  (and (map? info) (file? (option:unwrap-or (&map:get info :type) nil)))
+                  (and (map? info) (file? (option:unwrap-or (get info :type) nil)))
                     fn (send!)
                       let
-                          mock-path $ option:unwrap-or (&map:get info :file) |
-                          response-code $ option:unwrap-or (&map:get info :code) 200
-                          response-delay $ option:unwrap-or (&map:get info :delay) 0
+                          mock-path $ option:unwrap-or (get info :file) |
+                          response-code $ option:unwrap-or (get info :code) 200
+                          response-delay $ option:unwrap-or (get info :delay) 0
                         respond-with-file! mock-path pathname response-code response-delay cors-header send!
                   (enum? info)
-                    tag-match info
+                    match info
                       (:file code mock-path)
                         fn (send!) (respond-with-file! mock-path pathname code 0 cors-header send!)
                       (:file code mock-path delay)
@@ -159,11 +163,11 @@
             {} (:return 'Dynamic)
               :args $ [] 'Dynamic 'Dynamic
               :features $ #{} :js-ffi
-        |main! $ %{} 'CodeEntry (:doc |)
+        'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn main! () (; println @*configs) (load-console-formatter!) (load-config!)
               let
-                  config $ option:unwrap-or @*configs {}
+                  config $ or @*configs {}
                   port $ option:unwrap-or (&map:get config :port) 7800
                 skir/create-server!
                   fn (a b) (handle-request! a b)
@@ -174,21 +178,21 @@
             {} (:return 'Dynamic)
               :args $ []
               :features $ #{} :js-ffi
-        |on-proxy-error $ %{} 'CodeEntry (:doc |)
+        'on-proxy-error $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn on-proxy-error (err req res) (js/console.log err)
-              .end res $ str "|No path matched: " (.-url req) \newline \newline err
+              .end res $ str "|No path matched: " (.-url req) |\n |\n err
           :examples $ []
           :schema $ :: 'Fn
             {} (:return 'Dynamic)
               :args $ [] 'Dynamic 'Dynamic 'Dynamic
               :features $ #{} :js-ffi
-        |reload! $ %{} 'CodeEntry (:doc |)
+        'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn reload! () $ println |Reloaded.
           :examples $ []
           :schema $ :: 'Dynamic
-        |respond-with-file! $ %{} 'CodeEntry (:doc |)
+        'respond-with-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn respond-with-file! (mock-path pathname code delay cors-header send!)
               fs/access mock-path $ fn (err)
@@ -230,41 +234,41 @@
             app.config :refer $ *configs load-config!
             |http-proxy :default http-proxy
             |json5 :default JSON5
-    |app.path $ %{} 'FileEntry
+    'app.path $ %{} 'FileEntry
       :defs $ {}
-        |find-match-rule $ %{} 'CodeEntry (:doc |)
+        'find-match-rule $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn find-match-rule (segments rules)
               let
                   current-match $ loop
                       xs rules
-                    let
-                        cursor $ first xs
-                      ; println |compare segments |to cursor
-                      if (empty? xs) nil $ let
-                          cursor-path $ option:unwrap-or (&map:get cursor :path) |
-                          result $ match-path segments (split-path cursor-path)
-                        ; println |result result
-                        ; println |cursor cursor
-                        if
-                          option:unwrap-or (&map:get result :matches?) false
-                          assoc result :rule cursor
-                          recur $ rest xs
+                    if (empty? xs) nil $ let
+                        cursor $ option:unwrap-or (first xs) {}
+                        cursor-path $ option:unwrap-or (get cursor :path) |
+                        result $ match-path segments (split-path cursor-path)
+                      ; println |result result
+                      ; println |cursor cursor
+                      if
+                        option:unwrap-or (get result :matches?) false
+                        assoc result :rule cursor
+                        recur $ rest xs
                 ; println "|current rule" current-match
                 if (nil? current-match)
                   {} (:ok? false) (:segments segments)
                     :choices $ -> rules .to-list
                       map $ fn (r) (get r :path)
                   let
-                      matched-rule $ option:unwrap-or (&map:get current-match :rule) {}
-                      remaining-segments $ option:unwrap-or (&map:get current-match :rest) []
-                      next-rules $ option:unwrap-or (&map:get matched-rule :next) {}
+                      matched-rule $ option:unwrap-or (get current-match :rule) {}
+                      remaining-segments $ option:unwrap-or (get current-match :rest) []
+                      next-rules $ option:unwrap-or (get matched-rule :next) {}
                     if (empty? remaining-segments)
                       {} (:ok? true) (:rule matched-rule)
                       recur remaining-segments next-rules
           :examples $ []
-          :schema $ :: 'Dynamic
-        |letter-number-pattern $ %{} 'CodeEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'List 'List
+        'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def letter-number-pattern $ new js/RegExp |\{[\w\d\-]+\}
           :examples $ []
@@ -272,49 +276,54 @@
             {} (:return 'JsObject)
               :args $ []
               :features $ #{} :js-ffi
-        |list-paths $ %{} 'CodeEntry (:doc |)
+        'list-paths $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn list-paths (routes)
               -> routes .to-list $ mapcat
                 fn (rule)
                   concat
                     [] $ {}
-                      :path $ option:unwrap-or (&map:get rule :path) |
+                      :path $ option:unwrap-or (get rule :path) |
                       :methods $ .to-list
                         exclude (keys rule) :path :next
                     ->
-                      list-paths $ option:unwrap-or (&map:get rule :next) {}
+                      list-paths $ option:unwrap-or (get rule :next) {}
                       map $ fn (x)
-                        {}
-                          :path $ str
-                            option:unwrap-or (&map:get rule :path) |
-                            , |/
-                              (option:unwrap-or (&map:get x :path) |)
-                          :methods $ option:unwrap-or (&map:get x :methods) []
+                        let
+                            parent-path $ option:unwrap-or (get rule :path) |
+                            child-path $ option:unwrap-or (get x :path) |
+                          {}
+                            :path $ str parent-path |/ child-path
+                            :methods $ option:unwrap-or (get x :methods) []
           :examples $ []
-          :schema $ :: 'Dynamic
-        |match-path $ %{} 'CodeEntry (:doc |)
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'List
+        'match-path $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn match-path (segments rule-path) (; println |matching segments rule-path)
               if (empty? rule-path)
                 {} (:matches? true) (:rest segments)
-                cond
-                    empty? segments
-                    {} (:matches false) (:rest segments) (:rest-rule rule-path)
-                  (= (first segments) (first rule-path))
-                    recur (rest segments) (rest rule-path)
-                  (or (.starts-with? (first rule-path) |:) (.!test letter-number-pattern (first rule-path)))
-                    recur (rest segments) (rest rule-path)
-                  true $ {} (:matches? false) (:rest segments) (:rest-rule rule-path)
+                let
+                    segment $ option:unwrap-or (first segments) |
+                    rule-segment $ option:unwrap-or (first rule-path) |
+                  cond
+                      empty? segments
+                      {} (:matches false) (:rest segments) (:rest-rule rule-path)
+                    (= segment rule-segment)
+                      recur (rest segments) (rest rule-path)
+                    (or (.starts-with? rule-segment |:) (.!test letter-number-pattern rule-segment))
+                      recur (rest segments) (rest rule-path)
+                    true $ {} (:matches? false) (:rest segments) (:rest-rule rule-path)
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.path $ :require
             app.util :refer $ split-path
-    |app.router $ %{} 'FileEntry
+    'app.router $ %{} 'FileEntry
       :defs $ {}
-        |lilac-method+ $ %{} 'CodeEntry (:doc |)
+        'lilac-method+ $ %{} 'CodeEntry (:doc |)
           :code $ quote
             deflilac lilac-method+ () $ optional+
               or+ $ []
@@ -330,7 +339,7 @@
                 tuple+ $ :: (tag+) (number+) (string+) (number+)
           :examples $ []
           :schema $ :: 'Dynamic
-        |lilac-router+ $ %{} 'CodeEntry (:doc |)
+        'lilac-router+ $ %{} 'CodeEntry (:doc |)
           :code $ quote
             deflilac lilac-router+ () $ record+
               {}
@@ -340,7 +349,7 @@
               {} $ :check-keys? true
           :examples $ []
           :schema $ :: 'Dynamic
-        |lilac-router-path+ $ %{} 'CodeEntry (:doc |)
+        'lilac-router-path+ $ %{} 'CodeEntry (:doc |)
           :code $ quote
             deflilac lilac-router-path+ () $ record+
               {}
@@ -358,25 +367,26 @@
         :code $ quote
           ns app.router $ :require
             lilac.core :refer $ validate-lilac number+ string+ keyword+ boolean+ nil+ list+ map+ set+ deflilac or+ and+ not+ custom+ is+ optional+ record+ tuple+ tag+
-    |app.schema $ %{} 'FileEntry
+    'app.schema $ %{} 'FileEntry
       :defs $ {}
-        |html-header $ %{} 'CodeEntry (:doc |)
+        'html-header $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def html-header $ {} (:Content-Type |text/html)
           :examples $ []
           :schema $ :: 'Dynamic
-        |json-header $ %{} 'CodeEntry (:doc |)
+        'json-header $ %{} 'CodeEntry (:doc |)
           :code $ quote
             def json-header $ {} (:Content-Type |application/json)
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote (ns app.schema)
-    |app.util $ %{} 'FileEntry
+    'app.util $ %{} 'FileEntry
       :defs $ {}
-        |check-version! $ %{} 'CodeEntry (:doc |)
+        'check-version! $ %{} 'CodeEntry (:doc |)
           :code $ quote
-            defn check-version! () (hint-fn async)
+            defn check-version! ()
+              hint-fn $ {} (:async true)
               let
                   pkg $ js/JSON.parse
                     fs/readFileSync $ path/join
@@ -389,25 +399,27 @@
                   println $ .!yellow chalk (str "|New version " npm-version "| available, current one is " version "| " "|. Please upgrade!\nyarn global add @jimengio/serve-json\n\n")
           :examples $ []
           :schema $ :: 'Dynamic
-        |delay! $ %{} 'CodeEntry (:doc |)
+        'delay! $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn delay! (t f) (js/setTimeout f t)
           :examples $ []
           :schema $ :: 'Dynamic
-        |file? $ %{} 'CodeEntry (:doc |)
+        'file? $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn file? (x)
               or (= :file x) (= |file x)
           :examples $ []
           :schema $ :: 'Dynamic
-        |split-path $ %{} 'CodeEntry (:doc |)
+        'split-path $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn split-path (x)
               -> (.split x |/)
                 filter $ fn (x)
-                  not $ .blank? x
+                  not $ .blank? (unsafe-coerce x String)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn
+            {} (:return 'Dynamic)
+              :args $ [] 'String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote
           ns app.util $ :require (|fs :as fs) (|chalk :default chalk) (|latest-version :default latest-version) (|path :as path)
