@@ -43,4 +43,4 @@ jobs:
         calcit calcit.cirru analyze dynamic-methods --format json | jq -e '.data.summary.findings == 0'
         calcit calcit.cirru analyze deprecated --summary-only --format json
         calcit calcit.cirru js
-        node --test test/cli-argv.test.mjs
+        node --test test/cli-argv.test.mjs test/delay.test.mjs
