@@ -248,24 +248,26 @@
                 do
                   println $ .gray (unsafe-coerce chalk 'app.config/ChalkHost) (str |sending "| " mock-path "| to " pathname)
                   delay! (or delay 0)
-                    fn () $ fs/readFile mock-path |utf8 $ fn (err content)
-                      try
-                        send! $ {}
-                          :code $ or code 200
-                          :message |OK
-                          :headers $ merge cors-header schema/json-header
-                          :body $ js/JSON.stringify
-                            .parse (unsafe-coerce JSON5 'app.config/Json5ParserHost) content
-                            , nil 2
-                        fn (e)
-                          shared/console-error! $ str e
-                          send! $ {} (:code 500) (:message |Error)
+                    fn ()
+                      fs/readFile mock-path |utf8 $ fn (err content)
+                        try
+                          send! $ {}
+                            :code $ or code 200
+                            :message |OK
                             :headers $ merge cors-header schema/json-header
                             :body $ js/JSON.stringify
-                              js-object (:message |Error)
-                                :msg $ str e
-                                :error e
+                              .parse (unsafe-coerce JSON5 'app.config/Json5ParserHost) content
                               , nil 2
+                          fn (e)
+                            shared/console-error! $ str e
+                            send! $ {} (:code 500) (:message |Error)
+                              :headers $ merge cors-header schema/json-header
+                              :body $ js/JSON.stringify
+                                js-object (:message |Error)
+                                  :msg $ str e
+                                  :error e
+                                , nil 2
+                      , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'String 'String 'Dynamic 'Dynamic (:: 'Map 'Tag 'String)
@@ -443,10 +445,11 @@
             node/set-timeout!
               fn () (f) &unit
               , t
+            , &unit
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Number)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Number $ :: 'Fn
-              {} (:return 'Dynamic)
+              {} (:return 'Unit)
                 :args $ []
             :features $ #{} :js-ffi
         'file? $ %{} 'CodeEntry (:doc |)
