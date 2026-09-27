@@ -50,9 +50,9 @@ jobs:
 
     - run: |
         if [ "$IS_PRERELEASE" = true ]; then
-          npm publish --tag alpha
+          npm publish --tag alpha --access public
         else
-          npm publish
+          npm publish --access public
         fi
       env:
         IS_PRERELEASE: ${{ github.event.release.prerelease }}

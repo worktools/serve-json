@@ -1,9 +1,18 @@
 {
   "name": "@worktools/serve-json",
-  "version": "0.0.14-alpha.3",
+  "version": "0.0.14-alpha.4",
   "packageManager": "yarn@4.12.0",
-  "bin": "./main.mjs",
-  "repository": "git@github.com:mvc-works/serve-json.git",
+  "bin": {
+    "serve-json": "./main.mjs"
+  },
+  "files": [
+    "main.mjs",
+    "js-out/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/worktools/serve-json.git"
+  },
   "author": "jiyinyiyong <jiyinyiyong@gmail.com>",
   "license": "MIT",
   "dependencies": {
