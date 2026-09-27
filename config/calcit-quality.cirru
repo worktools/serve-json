@@ -26,7 +26,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 0
-      :unsafeCoerce 2
+      :unsafeCoerce 0
     |app.config/load-config-from-file! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -63,15 +63,6 @@
       :typeNotFull 1
       :unresolved 0
       :unsafeCoerce 1
-    |app.main/on-proxy-error $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 0
     |app.main/respond-with-file! $ {} (:codeDynamic 0)
       :codeNil 2
       :declaredOptional 0
@@ -112,17 +103,17 @@
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
-      :schemaDynamic 1
+      :schemaDynamic 0
       :typeNone 0
       :typeNotFull 1
-      :unresolved 1
+      :unresolved 0
       :unsafeCoerce 0
     |app.router/lilac-method+ $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -131,7 +122,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -140,16 +131,7 @@
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 1
-      :typeNone 1
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.util/check-version! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 1
+      :typeNone 0
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
@@ -175,11 +157,11 @@
     :codeNil 10
     :declaredOptional 0
     :deprecatedCalls 0
-    :schemaDynamic 12
-    :typeNone 4
-    :typeNotFull 17
-    :unresolved 22
-    :unsafeCoerce 17
+    :schemaDynamic 10
+    :typeNone 0
+    :typeNotFull 15
+    :unresolved 20
+    :unsafeCoerce 15
   :scope $ {} (:includeDependencies false)
     :namespace nil
     :namespacePrefix nil

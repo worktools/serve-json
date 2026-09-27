@@ -5,7 +5,7 @@
   :entries $ {} $ :default
     {} (:description |) (:init-fn 'app.main/main!) (:mode :native) (:reload-fn 'app.main/reload!)
       :feature-policy $ {}
-      :modules $ [] |skir/ |lilac/
+      :modules $ [] |skir/ |lilac/ |js-ffi/
       :type-slots $ {}
   :files $ {}
     'app.config $ %{} 'FileEntry
@@ -42,12 +42,10 @@
         'load-config! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn load-config! ()
             let
-                argv $ unsafe-coerce js/process.argv JsObject
-                raw-path $ aget argv 2
-                config-path $ if (js-present? raw-path) (unsafe-coerce raw-path String) (detect-config-file!)
-              when (nil? config-path) (println "|No config file: config.cirru") (js/process.exit 1)
-              when-not (fs/existsSync config-path) (println "|Not found:" config-path) (js/process.exit 1)
-              println "|Running at" js/process.env.PWD
+                config-path $ option:unwrap-or (node/argv-at 2) (detect-config-file!)
+              when (nil? config-path) (println "|No config file: config.cirru") (node/exit! 1)
+              when-not (fs/existsSync config-path) (println "|Not found:" config-path) (node/exit! 1)
+              println "|Running at" $ node/cwd
               load-config-from-file! config-path
               gaze config-path $ fn (err watcher)
                 .!on watcher |changed $ fn (e) (load-config-from-file! config-path)
@@ -89,6 +87,7 @@
             app.router :refer $ lilac-router+
             lilac.core :refer $ validate-lilac
             |json5 :default JSON5
+            js-ffi.node :as node
     'app.main $ %{} 'FileEntry
       :defs $ {}
         '*proxy $ %{} 'CodeEntry (:doc |)
@@ -107,11 +106,8 @@
         'ProxyHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ProxyHost
             .web $ :: 'Fn $ {}
-              :args $ [] 'app.main/ProxyHost 'skir.schema/NodeRequestHost 'skir.schema/NodeServerResponseHost 'JsObject $ :: 'Fn
-                {}
-                  :args $ [] 'Dynamic
-                  :return 'Dynamic
-              :return 'Dynamic
+              :args $ [] 'app.main/ProxyHost 'js-ffi.node/NodeRequestHost 'js-ffi.node/NodeServerResponseHost 'JsObject
+              :return 'Unit
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ :: 'Trait
@@ -136,7 +132,6 @@
                   , |
                 request-url $ :url req
                 request-method $ :method req
-                request-headers $ :headers req
                 original-request $ option:unwrap $ :original-request req
                 pathname $ option:unwrap-or
                   first $ split request-url |?
@@ -154,7 +149,7 @@
                   unsafe-coerce (get matched-rule request-method) (:: 'Option 'Dynamic)
                   , nil
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
-                  :Access-Control-Allow-Origin $ option:unwrap-or (get request-headers |origin) |
+                  :Access-Control-Allow-Origin $ option:unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
               ; println "|find rule" pathname rule-result info request-method
               cond
@@ -221,7 +216,7 @@
                       :info $ to-js-data info
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'skir.schema/Request 'skir.schema/NodeServerResponseHost
+            :args $ [] 'skir.schema/Request 'js-ffi.node/NodeServerResponseHost
             :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (; println @*configs) (load-console-formatter!) (load-config!)
@@ -233,17 +228,9 @@
               skir/create-server!
                 fn (a b) (handle-request! a b)
                 %some $ {} $ :port port
-            ; check-version!
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
-            :features $ #{} :js-ffi
-        'on-proxy-error $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn on-proxy-error (err req res) (js/console.log err)
-            .end res $ str "|No path matched: " (.-url req) |\n |\n err
-          :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
-            :args $ [] 'Dynamic 'Dynamic 'Dynamic
             :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |Reloaded.)
@@ -270,7 +257,8 @@
                           :body $ js/JSON.stringify
                             .parse (unsafe-coerce JSON5 'app.config/Json5ParserHost) content
                             , nil 2
-                        fn (e) (js/console.error e)
+                        fn (e)
+                          shared/console-error! $ str e
                           send! $ {} (:code 500) (:message |Error)
                             :headers $ merge cors-header schema/json-header
                             :body $ js/JSON.stringify
@@ -286,13 +274,15 @@
             :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
-          :require (skir.core :as skir) (|node:fs :as fs) (|node:path :as path) (|latest-version :as latest-version) (|chalk :default chalk)
-            app.util :refer $ check-version! file? split-path delay!
+          :require (skir.core :as skir) (|node:fs :as fs) (|chalk :default chalk)
+            app.util :refer $ file? split-path delay!
             app.schema :as schema
             app.path :refer $ find-match-rule list-paths
             app.config :refer $ *configs load-config!
             |http-proxy :default http-proxy
             |json5 :default JSON5
+            js-ffi.node :as node
+            js-ffi.shared :as shared
     'app.path $ %{} 'FileEntry
       :defs $ {}
         'RegExpHost $ %{} 'CodeEntry (:doc |)
@@ -382,6 +372,7 @@
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ [] (:: 'List 'String) (:: 'List 'String)
+            :features $ #{} :js-ffi
             :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.path
@@ -401,7 +392,8 @@
               tuple+ $ :: (tag+) (number+) (string+)
               tuple+ $ :: (tag+) (number+) (string+) (number+)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'lilac-router+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deflilac lilac-router+ ()
             record+
@@ -411,7 +403,8 @@
                 :routes $ list+ $ lilac-router-path+
               {} $ :check-keys? true
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
         'lilac-router-path+ $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deflilac lilac-router-path+ ()
             record+
@@ -424,7 +417,8 @@
                 :next $ optional+ $ list+ (lilac-router-path+)
               {} $ :check-keys? true
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+            :args $ []
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.router
           :require $ lilac.core :refer $ validate-lilac number+ string+ keyword+ boolean+ nil+ list+ map+ set+ deflilac or+ and+ not+ custom+ is+ optional+ record+ tuple+ tag+
@@ -444,24 +438,13 @@
         :code $ quote $ ns app.schema
     'app.util $ %{} 'FileEntry
       :defs $ {}
-        'check-version! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn check-version! ()
-            hint-fn $ {} $ :async true
-            let
-                pkg $ js/JSON.parse $ fs/readFileSync
-                  path/join
-                    dirname $ fileURLToPath js/import.meta.url
-                    , |../package.json
-                version $ .-version pkg
-                npm-version $ js-await $ latest-version (.-name pkg)
-              if (= npm-version version) (println "|Running latest version" version)
-                println $ .!yellow chalk $ str "|New version " npm-version "| available, current one is " version "| " "|. Please upgrade!\nyarn global add @jimengio/serve-json\n\n"
-          :examples $ []
-          :schema $ :: 'Dynamic
         'delay! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn delay! (t f) (js/setTimeout f t)
+          :code $ quote $ defn delay! (t f)
+            node/set-timeout!
+              fn () (f) &unit
+              , t
           :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Dynamic)
+          :schema $ :: 'Fn $ {} (:return 'Number)
             :args $ [] 'Number $ :: 'Fn
               {} (:return 'Dynamic)
                 :args $ []
@@ -481,8 +464,10 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'String
             :return $ :: 'List 'String
+          :tests $ [] $ %{} 'TestEntry (:name |trims-empty-segments)
+            :code $ quote $ do
+              assert= ([] |a |b) (split-path |/a//b/)
+              assert= ([]) (split-path |///)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.util
-          :require (|fs :as fs) (|chalk :default chalk) (|latest-version :default latest-version) (|path :as path)
-            |path :refer $ dirname
-            |url :refer $ fileURLToPath
+          :require $ js-ffi.node :as node
