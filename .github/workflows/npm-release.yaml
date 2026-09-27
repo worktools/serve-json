@@ -43,6 +43,12 @@ jobs:
         calcit calcit.cirru analyze deprecated --summary-only --format json
         calcit calcit.cirru js
 
-    - run: npm publish
+    - run: |
+        if [ "$IS_PRERELEASE" = true ]; then
+          npm publish --tag alpha
+        else
+          npm publish
+        fi
       env:
+        IS_PRERELEASE: ${{ github.event.release.prerelease }}
         NODE_AUTH_TOKEN: ${{secrets.npm_token}}
