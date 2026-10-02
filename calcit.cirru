@@ -3,7 +3,7 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {} $ :default
-    {} (:description |) (:init-fn 'app.main/main!) (:mode :native) (:reload-fn 'app.main/reload!)
+    {} (:description |) (:init-fn 'app.main/main!) (:mode :js) (:reload-fn 'app.main/reload!) (:target :node)
       :feature-policy $ {}
       :modules $ [] |skir/ |lilac/ |js-ffi/
       :type-slots $ {}
@@ -68,12 +68,12 @@
                 validation $ validate-lilac result $ lilac-router+
               if
                 option:unwrap-or
-                  unsafe-coerce (&map:get validation :ok?) (:: 'Option 'Bool)
+                  assert-type (get validation :ok?) (:: 'Option 'Bool)
                   , false
                 println "|passed validation"
                 println $ .!red (unsafe-coerce chalk 'app.config/ChalkHost)
                   option:unwrap-or
-                    unsafe-coerce (&map:get validation :formatted-message) (:: 'Option 'String)
+                    assert-type (get validation :formatted-message) (:: 'Option 'String)
                     , |unknown-error
               println "|Loaded config from" config-path
               reset! *configs result
@@ -123,13 +123,15 @@
             let
                 config $ or @*configs {}
                 routes $ option:unwrap-or
-                  unsafe-coerce (&map:get config :routes)
+                  assert-type (get config :routes)
                     :: 'Option $ :: 'List $ :: 'Map 'Tag 'Dynamic
                   assert-type ([])
                     :: 'List $ :: 'Map 'Tag 'Dynamic
-                fallback-host $ option:unwrap-or
-                  unsafe-coerce (&map:get config :fallback-host) (:: 'Option 'String)
-                  , |
+                fallback-host $ assert-type
+                  or
+                    .unwrap-or (get config :fallback-host) |
+                    , |
+                  , String
                 request-url $ :url req
                 request-method $ :method req
                 original-request $ option:unwrap $ :original-request req
@@ -139,15 +141,13 @@
                 segments $ split-path pathname
                 rule-result $ find-match-rule segments routes
                 matched-rule $ option:unwrap-or
-                  unsafe-coerce (&map:get rule-result :rule)
+                  assert-type (get rule-result :rule)
                     :: 'Option $ :: 'Map 'Tag 'Dynamic
                   assert-type ({}) (:: 'Map 'Tag 'Dynamic)
                 rule-ok? $ option:unwrap-or
-                  unsafe-coerce (&map:get rule-result :ok?) (:: 'Option 'Bool)
+                  assert-type (get rule-result :ok?) (:: 'Option 'Bool)
                   , false
-                info $ option:unwrap-or
-                  unsafe-coerce (get matched-rule request-method) (:: 'Option 'Dynamic)
-                  , nil
+                info $ option:unwrap-or (get matched-rule request-method) nil
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ option:unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
@@ -222,12 +222,12 @@
           :code $ quote $ defn main! () (; println @*configs) (load-console-formatter!) (load-config!)
             let
                 config $ or @*configs {}
-                port $ option:unwrap-or
-                  unsafe-coerce (&map:get config :port) (:: 'Option 'Number)
-                  , 7800
+                port $ assert-type
+                  .unwrap-or (get config :port) 7800
+                  , Number
               skir/create-server!
                 fn (a b) (handle-request! a b)
-                %some $ {} $ :port port
+                %:: Option :some $ {} $ :port port
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ []
@@ -313,11 +313,12 @@
               ; println "|current rule" current-match
               if (nil? current-match)
                 {} (:ok? false) (:segments segments)
-                  :choices $ map rules $ fn (r) (get r :path)
+                  :choices $ map rules $ fn (r)
+                    .unwrap-or (get r :path) |
                 let
                     matched-rule $ option:unwrap-or (get current-match :rule) {}
                     remaining-segments $ option:unwrap-or (get current-match :rest) []
-                    next-rules $ option:unwrap-or (get matched-rule :next) {}
+                    next-rules $ option:unwrap-or (get matched-rule :next) ([])
                   if (empty? remaining-segments)
                     {} (:ok? true) (:rule matched-rule)
                     recur remaining-segments next-rules

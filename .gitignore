@@ -10,6 +10,7 @@
 /json/
 
 .calcit-error.cirru
+.calcit/
 .compact-inc.cirru
 
 js-out
