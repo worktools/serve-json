@@ -563,6 +563,9 @@
                   routes $ decode-map-as
                     .unwrap $ get raw :routes
                     :: 'List $ :: 'Map 'Tag 'Dynamic
+                when-not
+                  and (.integer? port) (>= port 0) (<= port 65535)
+                  raise "|port must be an integer between 0 and 65535"
                 check-keys! raw $ #{} :port :fallback-host :routes
                 .each routes check-route!
                 Result :ok $ Config :port port :fallback-host fallback :routes routes
@@ -572,6 +575,24 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic
             :return $ :: 'Result 'app.schema/Config 'String
+          :tests $ [] $ %{} 'TestEntry (:name |port-range)
+            :code $ quote $ do
+              .each ([] 0 7800 65535)
+                fn (port)
+                  match
+                    decode-config $ {} (:port port)
+                      :routes $ []
+                    (:ok config)
+                      assert= port $ :port config
+                    (:err message) (raise message)
+              .each ([] -1 1.5 65536)
+                fn (port)
+                  match
+                    decode-config $ {} (:port port)
+                      :routes $ []
+                    (:ok config) (raise "|invalid port accepted")
+                    (:err message)
+                      assert= true $ .includes? message |port
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.router
           :require
