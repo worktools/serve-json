@@ -1,6 +1,6 @@
 
-{} (:calcit-version |0.27.0)
+{} (:calcit-version |0.30.1-alpha.5)
   :version |0.0.14-alpha.2
   :dependencies $ {} (|calcit-lang/lilac |0.5.9)
-    |calcit-lang/skir |0.0.29-alpha.2
-    |calcit-lang/js-ffi |0.2.1-alpha.4
+    |calcit-lang/skir |0.0.30
+    |calcit-lang/js-ffi |0.2.3

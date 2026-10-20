@@ -239,24 +239,28 @@
             :args $ []
         'respond-with-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn respond-with-file! (mock-path pathname code delay cors-header send!)
-            fs/access mock-path $ fn (err)
-              if (some? err)
-                do (println "|Need file" mock-path)
-                  send! $ {} (:code 404) (:message "|Unknown request")
-                    :headers $ merge cors-header schema/html-header
-                    :body $ str mock-path "| not found"
-                do
-                  println $ .gray (unsafe-coerce chalk 'app.config/ChalkHost) (str |sending "| " mock-path "| to " pathname)
-                  delay! (or delay 0)
-                    fn ()
+            let
+                response-code $ decode-map-as (or code 200) 'Number
+                response-delay $ decode-map-as (or delay 0) 'Number
+              fs/access mock-path $ fn (err)
+                hint-fn $ {}
+                  :args $ [] $ :: 'JsNullish 'JsObject
+                  :return 'Unit
+                  :features $ #{} :js-ffi
+                if (js-present? err)
+                  do (println "|Need file" mock-path)
+                    send! $ {} (:code 404) (:message "|Unknown request")
+                      :headers $ merge cors-header schema/html-header
+                      :body $ str mock-path "| not found"
+                  do
+                    println $ .gray (unsafe-coerce chalk 'app.config/ChalkHost) (str |sending "| " mock-path "| to " pathname)
+                    delay! response-delay $ fn ()
                       fs/readFile mock-path |utf8 $ fn (err content)
                         try
-                          send! $ {}
-                            :code $ or code 200
-                            :message |OK
+                          send! $ {} (:code response-code) (:message |OK)
                             :headers $ merge cors-header schema/json-header
                             :body $ js/JSON.stringify
-                              .parse (unsafe-coerce JSON5 'app.config/Json5ParserHost) content
+                              .parse (unsafe-coerce JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
                               , nil 2
                           fn (e)
                             shared/console-error! $ str e
@@ -268,6 +272,7 @@
                                   :error e
                                 , nil 2
                       , &unit
+                , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Dynamic)
             :args $ [] 'String 'String 'Dynamic 'Dynamic (:: 'Map 'Tag 'String)
@@ -295,33 +300,53 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ :: 'Trait
+        'child-routes $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn child-routes (rule)
+            let
+                value $ .unwrap-or (get rule :next) nil
+              if (nil? value) ([])
+                decode-map-as value $ :: 'List $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :return $ :: 'List $ :: 'Map 'Tag 'Dynamic
         'find-match-rule $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-match-rule (segments rules)
             let
                 current-match $ loop
                     xs rules
-                  if (empty? xs) nil $ let
-                      cursor $ option:unwrap-or (first xs) {}
-                      cursor-path $ option:unwrap-or (get cursor :path) |
-                      result $ match-path segments $ split-path cursor-path
-                    ; println |result result
-                    ; println |cursor cursor
-                    if
-                      option:unwrap-or (get result :matches?) false
-                      assoc result :rule cursor
-                      recur $ rest xs
-              ; println "|current rule" current-match
-              if (nil? current-match)
-                {} (:ok? false) (:segments segments)
-                  :choices $ map rules $ fn (r)
-                    .unwrap-or (get r :path) |
-                let
-                    matched-rule $ option:unwrap-or (get current-match :rule) {}
-                    remaining-segments $ option:unwrap-or (get current-match :rest) []
-                    next-rules $ option:unwrap-or (get matched-rule :next) ([])
-                  if (empty? remaining-segments)
-                    {} (:ok? true) (:rule matched-rule)
-                    recur remaining-segments next-rules
+                  if (empty? xs) (Option :none)
+                    let
+                        cursor $ .unwrap $ first xs
+                        cursor-path $ decode-map-as
+                          .unwrap-or (get cursor :path) |
+                          , 'String
+                        result $ match-path segments $ split-path cursor-path
+                      if
+                        .unwrap-or
+                          decode-map-as (get result :matches?) (:: 'Option 'Bool)
+                          , false
+                        Option :some $ assoc result :rule cursor
+                        recur $ rest xs
+              match current-match
+                (:none)
+                  {} (:ok? false) (:segments segments)
+                    :choices $ map rules $ fn (r)
+                      decode-map-as
+                        .unwrap-or (get r :path) |
+                        , 'String
+                (:some matched)
+                  let
+                      matched-rule $ decode-map-as
+                        .unwrap-or (get matched :rule) ({})
+                        :: 'Map 'Tag 'Dynamic
+                      remaining-segments $ decode-map-as
+                        .unwrap-or (get matched :rest) ([])
+                        :: 'List 'String
+                      next-rules $ child-routes matched-rule
+                    if (empty? remaining-segments)
+                      {} (:ok? true) (:rule matched-rule)
+                      recur remaining-segments next-rules
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ [] (:: 'List 'String)
@@ -329,7 +354,7 @@
             :return $ :: 'Map 'Tag 'Dynamic
         'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn letter-number-pattern ()
-            unsafe-coerce (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
+            js-cast (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.path/RegExpHost)
             :args $ []
@@ -342,17 +367,23 @@
                 :return $ :: 'List $ :: 'Map 'Tag 'Dynamic
               concat
                 [] $ {}
-                  :path $ option:unwrap-or (get rule :path) |
+                  :path $ decode-map-as
+                    .unwrap-or (get rule :path) |
+                    , 'String
                   :methods $ &set:to-list $ exclude (keys rule) :path :next
                 ->
-                  list-paths $ option:unwrap-or (get rule :next) {}
+                  list-paths $ child-routes rule
                   map $ fn (x)
                     let
-                        parent-path $ option:unwrap-or (get rule :path) |
-                        child-path $ option:unwrap-or (get x :path) |
+                        parent-path $ decode-map-as
+                          .unwrap-or (get rule :path) |
+                          , 'String
+                        child-path $ decode-map-as
+                          .unwrap-or (get x :path) |
+                          , 'String
                       {}
                         :path $ str parent-path |/ child-path
-                        :methods $ option:unwrap-or (get x :methods) []
+                        :methods $ .unwrap-or (get x :methods) ([])
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ [] $ :: 'List (:: 'Map 'Tag 'Dynamic)
