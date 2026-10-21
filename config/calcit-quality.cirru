@@ -1,41 +1,14 @@
 {} (:schemaVersion 2)
   :definitions $ {}
-    |app.config/*configs $ {} (:codeDynamic 0)
-      :codeNil 1
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 2
-      :unsafeCoerce 0
-    |app.config/detect-config-file! $ {} (:codeDynamic 0)
-      :codeNil 1
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 2
-      :unsafeCoerce 0
-    |app.config/load-config! $ {} (:codeDynamic 0)
+    |app.config/chalk-host $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 0
       :typeNone 0
-      :typeNotFull 1
+      :typeNotFull 0
       :unresolved 0
-      :unsafeCoerce 0
-    |app.config/load-config-from-file! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 4
+      :unsafeCoerce 1
     |app.main/create-proxy! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -53,16 +26,7 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 5
-      :unsafeCoerce 6
-    |app.main/main! $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 0
-      :unsafeCoerce 1
+      :unsafeCoerce 0
     |app.main/respond-with-file! $ {} (:codeDynamic 0)
       :codeNil 2
       :declaredOptional 0
@@ -71,25 +35,25 @@
       :typeNone 0
       :typeNotFull 1
       :unresolved 2
-      :unsafeCoerce 2
+      :unsafeCoerce 0
+    |app.path/child-routes $ {} (:codeDynamic 0)
+      :codeNil 0
+      :declaredOptional 0
+      :deprecatedCalls 0
+      :schemaDynamic 1
+      :typeNone 0
+      :typeNotFull 1
+      :unresolved 1
+      :unsafeCoerce 0
     |app.path/find-match-rule $ {} (:codeDynamic 0)
-      :codeNil 1
+      :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
       :schemaDynamic 2
       :typeNone 0
       :typeNotFull 1
-      :unresolved 3
+      :unresolved 2
       :unsafeCoerce 0
-    |app.path/letter-number-pattern $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 0
-      :typeNone 0
-      :typeNotFull 0
-      :unresolved 0
-      :unsafeCoerce 1
     |app.path/list-paths $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
@@ -108,7 +72,7 @@
       :typeNotFull 1
       :unresolved 0
       :unsafeCoerce 0
-    |app.router/lilac-method+ $ {} (:codeDynamic 0)
+    |app.router/check-method! $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
@@ -117,16 +81,7 @@
       :typeNotFull 1
       :unresolved 1
       :unsafeCoerce 0
-    |app.router/lilac-router+ $ {} (:codeDynamic 0)
-      :codeNil 0
-      :declaredOptional 0
-      :deprecatedCalls 0
-      :schemaDynamic 1
-      :typeNone 0
-      :typeNotFull 1
-      :unresolved 1
-      :unsafeCoerce 0
-    |app.router/lilac-router-path+ $ {} (:codeDynamic 0)
+    |app.router/decode-config $ {} (:codeDynamic 0)
       :codeNil 0
       :declaredOptional 0
       :deprecatedCalls 0
@@ -145,14 +100,14 @@
       :unresolved 1
       :unsafeCoerce 0
   :metrics $ {} (:codeDynamic 0)
-    :codeNil 10
+    :codeNil 7
     :declaredOptional 0
     :deprecatedCalls 0
-    :schemaDynamic 10
+    :schemaDynamic 8
     :typeNone 0
-    :typeNotFull 14
-    :unresolved 20
-    :unsafeCoerce 15
+    :typeNotFull 9
+    :unresolved 15
+    :unsafeCoerce 2
   :scope $ {} (:includeDependencies false)
     :namespace nil
     :namespacePrefix nil

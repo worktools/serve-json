@@ -150,6 +150,7 @@ node --test test/cli-argv.test.mjs test/delay.test.mjs
 - 退役已归档的 Lilac 依赖，改用应用自身的配置解码和字段检查；不复制通用验证框架。配置文件监听改为 Node `fs.watchFile`，保持 100ms 轮询，只监听实际使用的单个文件，不再依赖 Gaze 的目录/glob 监听。
 - 内部配置使用具名 Struct，路由及方法的外部数据仍保留原 Map/Enum 协议。Chalk 和 http-proxy 的可调用模块对象各保留一处显式 FFI trust 边界，不冒称运行时结构检查已证明函数属性合同。
 - 本轮不发布 npm 包、不部署服务，不改变现有监听 host 或服务器路径。
+- 经逐项审阅批准，质量基线仅将新增额度归属到 chalk-host、child-routes、check-method!、decode-config 四个边界，并扣除旧位置已消除的额度。全局上限收紧为 unsafe 2、codeNil 7、schemaDynamic 8、typeNotFull 9、unresolved 15；其他定义预算不放宽。保留原门禁，不额外添加验证脚本。
 
 ### License
 
