@@ -1,5 +1,14 @@
 ## Serve JSON
 
+### 当前候选 0.0.14：正式依赖图配对
+
+使用者影响：CLI/runtime仍为正式0.30.1，模块更新为已发布Skir0.0.32、JS-FFI0.2.5，
+传递Router0.8.37；请重新安装完整依赖图并生成JS，不混装旧alpha模块缓存。
+相对已合并的0.0.14迁移源码不变，不改配置协议、文件监听、HTTP响应或代理行为。
+npm仍是0.0.13，本轮不创建release/npm包、不部署或重启服务；0.0.14尚未发布。
+CI只删除all-defs已覆盖的重复namespace清单，原strict、质量基线及业务测试保留，
+发版工作流改为运行同一组全部附带测试。无前端资源，不添加COS/CDN配置。
+
 ### Usage
 
 ![](https://img.shields.io/npm/v/@jimengio/serve-json.svg?style=flat-square)
@@ -134,7 +143,6 @@ caps --strict --ci
 yarn install --immutable
 calcit --check-only --all-defs
 calcit fix --workflow strict --verify
-calcit --check-only --ns app.config --ns app.main --ns app.path --ns app.router --ns app.schema --ns app.util --summary-only
 calcit analyze quality --baseline config/calcit-quality.cirru
 calcit test --require-match --summary-only
 calcit js
@@ -143,7 +151,7 @@ node --test test/cli-argv.test.mjs test/delay.test.mjs
 
 入口明确使用 JavaScript/Node 目标。`js-out/` 是构建产物，不提交到 Git，但保留在 npm 包中供 CLI 运行。本项目没有前端页面，不配置 COS/CDN；原 npm 发版流程保留，升级 PR 不自动发布。
 
-### 本轮迁移对使用者的影响
+### 历史：已合并的 0.0.14 源码迁移
 
 - 继续支持 JSON、JSON5 和 Cirru EDN 配置、Map/Enum 方法配置、嵌套路由、状态码、延迟、CORS 及 fallback proxy。可选字段的缺失或 nil 默认值保留，未知键仍只告警。
 - 无效配置不再仅打印验证错误后继续启动：启动时拒绝无效配置，热更新失败时保留最后一次有效配置。修正文件后可再次加载。
