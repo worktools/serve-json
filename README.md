@@ -4,7 +4,12 @@
 
 使用者影响：CLI/runtime仍为正式0.30.1，模块更新为已发布Skir0.0.32、JS-FFI0.2.5，
 传递Router0.8.37；请重新安装完整依赖图并生成JS，不混装旧alpha模块缓存。
-相对已合并的0.0.14迁移源码不变，不改配置协议、文件监听、HTTP响应或代理行为。
+继续迁移为正式0.30.1公开API：11处内部 `option:unwrap-or` 改为 `.unwrap-or`，
+8处 Map 合并改为 `.merge`，1处仅包住同一个 header Map 的合并包装直接删除。
+默认值、header 覆盖顺序、配置协议、文件监听、HTTP响应和代理行为保持不变。
+Enum 的3处 `count` 按公开 Countable 合同保留（包含 tag），不误改为集合 `.len`。
+Chalk/http-proxy 两个可调用模块仍保留真实 FFI trust 边界，不以浅层检查伪称已证明函数合同；
+原质量基线、附带测试和 Node 回归不变，不新增校验脚本或编译器改写规则。
 npm仍是0.0.13，本轮不创建release/npm包、不部署或重启服务；0.0.14尚未发布。
 CI只删除all-defs已覆盖的重复namespace清单，原strict、质量基线及业务测试保留，
 发版工作流改为运行同一组全部附带测试。无前端资源，不添加COS/CDN配置。
