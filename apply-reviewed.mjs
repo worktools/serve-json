@@ -11,7 +11,7 @@ const before=norm(JSON.parse(readFileSync('reviewed.json','utf8'))),expected=str
 assert.equal(before.length,36);assert.equal(before.reduce((n,d)=>n+d.tests.length,0),2);
 const config=q('config'),namespaces=q('ns').namespaces.map(n=>q('ns',n));
 const core=['count','&core-enum-methods','option:unwrap-or'].map(n=>q('def','calcit.core/'+n));writeFileSync('acceptance/core-contracts.json',JSON.stringify(core,null,2));
-assert.ok(core[0].doc.includes('Countable'));assert.ok(core[1].code.some(x=>Array.isArray(x)&&x[1]===':count'&&x[2]==='&enum:count'));
+assert.ok(core[0].doc.includes('Countable'));assert.ok(core[1].code[2].some(x=>Array.isArray(x)&&x[1]===':count'&&x[2]==='&enum:count'));
 function walk(x,path,id){
   if(!Array.isArray(x)||['quote','quasiquote',';','comment','defmacro'].includes(x[0]))return x;
   if(['merge','option:unwrap-or','count'].includes(x[0])){
