@@ -171,36 +171,34 @@
                 request-url $ :url req
                 request-method $ :method req
                 original-request $ .unwrap $ :original-request req
-                pathname $ option:unwrap-or
+                pathname $ .unwrap-or
                   first $ split request-url |?
                   , |
                 segments $ split-path pathname
                 rule-result $ find-match-rule segments routes
-                matched-rule $ option:unwrap-or
+                matched-rule $ .unwrap-or
                   decode-map-as (get rule-result :rule)
                     :: 'Option $ :: 'Map 'Tag 'Dynamic
                   decode-map-as ({}) (:: 'Map 'Tag 'Dynamic)
-                rule-ok? $ option:unwrap-or
+                rule-ok? $ .unwrap-or
                   decode-map-as (get rule-result :ok?) (:: 'Option 'Bool)
                   , false
-                info $ option:unwrap-or (get matched-rule request-method) nil
+                info $ .unwrap-or (get matched-rule request-method) nil
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
-                  :Access-Control-Allow-Origin $ option:unwrap-or (node/request-header original-request |origin) |
+                  :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
               ; println "|find rule" pathname rule-result info request-method
               cond
                   = pathname |/
                   {} (:code 200) (:message |OK)
-                    :headers $ merge cors-header schema/json-header
+                    :headers $ .merge cors-header schema/json-header
                     :body $ js/JSON.stringify
                       to-js-data $ {}
                         :message $ str "|This is a data mocking server."
                         :choices $ list-paths routes
                       , nil 2
                 (= :options request-method)
-                  {} (:code 200) (:message |OK)
-                    :headers $ merge cors-header
-                    :body |OK
+                  {} (:code 200) (:message |OK) (:headers cors-header) (:body |OK)
                 (= pathname |/favicon.ico)
                   {} (:code 301)
                     :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
@@ -212,18 +210,18 @@
                         .web @*proxy original-request res $ js-object $ :target fallback-host
                         fn (err)
                           {} (:code 500) (:message "|Failed to access fallback host")
-                            :headers $ merge cors-header schema/json-header
+                            :headers $ .merge cors-header schema/json-header
                             :body err
                       , :effect
                     do (println 404 pathname)
                       {} (:code 400) (:message "|Not matching")
-                        :headers $ merge cors-header schema/json-header
+                        :headers $ .merge cors-header schema/json-header
                         :body $ js/JSON.stringify
                           js-object
                             :message $ str "|No matching path for " pathname
                             :reason $ to-js-data rule-result
                           , nil 2
-                (and (map? info) (file? (option:unwrap-or (get info :type) nil)))
+                (and (map? info) (file? (.unwrap-or (get info :type) nil)))
                   fn (send!)
                     hint-fn $ {}
                       :args $ [] $ :: 'Fn
@@ -232,9 +230,9 @@
                           :return 'Unit
                       :return 'Unit
                     let
-                        mock-path $ option:unwrap-or (get info :file) |
-                        response-code $ option:unwrap-or (get info :code) 200
-                        response-delay $ option:unwrap-or (get info :delay) 0
+                        mock-path $ .unwrap-or (get info :file) |
+                        response-code $ .unwrap-or (get info :code) 200
+                        response-delay $ .unwrap-or (get info :delay) 0
                       respond-with-file! (decode-map-as mock-path 'String) pathname response-code response-delay cors-header send!
                 (enum? info)
                   match info
@@ -258,7 +256,7 @@
                         respond-with-file! (decode-map-as mock-path 'String) pathname code delay cors-header send!
                     _ $ do (eprintln 400 info)
                       {} (:code 400) (:message "|Unknown config")
-                        :headers $ merge cors-header schema/json-header
+                        :headers $ .merge cors-header schema/json-header
                         :body $ js/JSON.stringify
                           js-object
                             :message $ str "|No matching path for " pathname
@@ -266,7 +264,7 @@
                           , nil 2
                 true $ do (println "|Bad result for rule" pathname request-method info)
                   {} (:code 400) (:message "|Unknown request")
-                    :headers $ merge cors-header schema/json-header
+                    :headers $ .merge cors-header schema/json-header
                     :body $ js-object (:code 400) (:message "|Unknown rule")
                       :rule $ to-js-data matched-rule
                       :info $ to-js-data info
@@ -301,7 +299,7 @@
                 if (js-present? err)
                   do (println "|Need file" mock-path)
                     send! $ {} (:code 404) (:message "|Unknown request")
-                      :headers $ merge cors-header schema/html-header
+                      :headers $ .merge cors-header schema/html-header
                       :body $ str mock-path "| not found"
                   do
                     println $ .gray (chalk-host) (str |sending "| " mock-path "| to " pathname)
@@ -309,14 +307,14 @@
                       fs/readFile mock-path |utf8 $ fn (err content)
                         try
                           send! $ {} (:code response-code) (:message |OK)
-                            :headers $ merge cors-header schema/json-header
+                            :headers $ .merge cors-header schema/json-header
                             :body $ js/JSON.stringify
                               .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
                               , nil 2
                           fn (e)
                             shared/console-error! $ str e
                             send! $ {} (:code 500) (:message |Error)
-                              :headers $ merge cors-header schema/json-header
+                              :headers $ .merge cors-header schema/json-header
                               :body $ js/JSON.stringify
                                 js-object (:message |Error)
                                   :msg $ str e
@@ -447,8 +445,8 @@
             if (empty? rule-path)
               {} (:matches? true) (:rest segments)
               let
-                  segment $ option:unwrap-or (first segments) |
-                  rule-segment $ option:unwrap-or (first rule-path) |
+                  segment $ .unwrap-or (first segments) |
+                  rule-segment $ .unwrap-or (first rule-path) |
                 cond
                     empty? segments
                     {} (:matches false) (:rest segments) (:rest-rule rule-path)
