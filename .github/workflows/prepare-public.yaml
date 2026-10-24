@@ -1,0 +1,56 @@
+name: Temporary public-method preparation
+on:
+  push:
+    branches: [prepare/public-methods-031]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: calcit-lang/setup-calcit@ca701be5a471759e442aa053cd100720bbe1f09f
+        with:
+          tools: calcit,caps
+          caps-version: "0.1.1"
+          deps-file: deps.cirru
+      - name: Resolve unchanged formal graph
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare yarn@4.18.0 --activate
+          yarn install --immutable
+          caps --strict --ci
+          caps verify --toolchain
+      - name: Apply reviewed atomic operations
+        run: node apply-reviewed.mjs
+      - name: Original complete gates and code generation
+        run: |
+          set -euo pipefail
+          calcit edit format
+          calcit --check-only --all-defs
+          calcit fix --workflow strict --verify
+          calcit analyze quality --baseline config/calcit-quality.cirru
+          calcit test --require-match --summary-only --format json
+          calcit analyze weak-types --only dynamic-method --summary-only --format json | jq -e '.data.summary.findings == 0'
+          calcit analyze weak-types --only deprecated-call --summary-only --format json
+          calcit js
+          node --test test/cli-argv.test.mjs test/delay.test.mjs
+          cp calcit.cirru acceptance/snapshot.cirru
+          cp main.mjs acceptance/main.mjs
+          cp -R js-out acceptance/js-out
+      - name: Retain evidence
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: public-method-preparation
+          path: acceptance/
+          if-no-files-found: error
+          retention-days: 7
