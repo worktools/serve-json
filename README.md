@@ -1,18 +1,14 @@
 ## Serve JSON
 
-### 当前候选 0.0.14：正式依赖图配对
+### 当前候选 0.0.14：正式 Calcit 0.31.0
 
-使用者影响：CLI/runtime仍为正式0.30.1，模块更新为已发布Skir0.0.32、JS-FFI0.2.5，
-传递Router0.8.37；请重新安装完整依赖图并生成JS，不混装旧alpha模块缓存。
-继续迁移为正式0.30.1公开API：11处内部 `option:unwrap-or` 改为 `.unwrap-or`，
-8处 Map 合并改为 `.merge`，1处仅包住同一个 header Map 的合并包装直接删除。
-默认值、header 覆盖顺序、配置协议、文件监听、HTTP响应和代理行为保持不变。
-Enum 的3处 `count` 按公开 Countable 合同保留（包含 tag），不误改为集合 `.len`。
-Chalk/http-proxy 两个可调用模块仍保留真实 FFI trust 边界，不以浅层检查伪称已证明函数合同；
-原质量基线、附带测试和 Node 回归不变，不新增校验脚本或编译器改写规则。
-npm仍是0.0.13，本轮不创建release/npm包、不部署或重启服务；0.0.14尚未发布。
-CI只删除all-defs已覆盖的重复namespace清单，原strict、质量基线及业务测试保留，
-发版工作流改为运行同一组全部附带测试。无前端资源，不添加COS/CDN配置。
+使用者影响：CLI/runtime 配对正式 **0.31.0**，直接依赖更新为已发布的 Skir **0.0.34**、JS-FFI **0.2.7**；传递依赖包含 Router **0.9.0-alpha.3** 与 Respo **0.17.0-alpha.4**，仍有预发布模块。请重新安装完整依赖图并生成 JS。
+
+配置格式、HTTP 状态码、CORS、文件监听、代理行为和原监听地址不变。配置检查中的四处 `.each` 改为保留元素类型的 `.foldl`，以 Unit 累积，保持原顺序、校验与异常传播；不把回调参数改为 Dynamic，也不新增运行时强转。相关上游合同问题见 [Calcit #2449](https://github.com/calcit-lang/calcit/issues/2449)。Enum 的三处 `count` 保留含 tag 的 Countable 语义。
+
+原质量基线、附带测试、Node 回归和 CI 不变；本地完整 strict、两项附带测试、四项 Node 测试与 24 项合成回环 HTTP 验收通过。Chalk/http-proxy 两处 FFI trust 边界仍保留，不宣称全部类型债务清零。不增加永久验收脚本或编译器改写规则。
+
+0.0.14 仍是未发布候选，本轮不创建 release/npm 包、不部署或重启服务。此项目没有前端资源，不添加 COS/CDN 配置。
 
 ### Usage
 
@@ -141,7 +137,7 @@ When `:fallback-host` is specified, it will be used as a default proxy target wh
 
 ### 开发
 
-使用配对的正式 Calcit / `@calcit/procs` 0.30.1、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。安装依赖后检查并编译 CLI：
+使用配对的正式 Calcit / `@calcit/procs` 0.31.0、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。安装依赖后检查并编译 CLI：
 
 ```bash
 caps --strict --ci
