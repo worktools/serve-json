@@ -490,16 +490,15 @@
                   decode-map-as
                     .unwrap $ get data :file
                     , 'String
-                  .each ([] :code :delay)
-                    fn (key)
-                      hint-fn $ {}
-                        :args $ [] 'Tag
-                        :return 'Unit
-                      match (get data key)
-                        (:none) &unit
-                        (:some item)
-                          when (non-nil? item) (decode-map-as item 'Number)
-                      , &unit
+                  .foldl ([] :code :delay) &unit $ fn (_acc key)
+                    hint-fn $ {}
+                      :args $ [] 'Unit 'Tag
+                      :return 'Unit
+                    match (get data key)
+                      (:none) &unit
+                      (:some item)
+                        when (non-nil? item) (decode-map-as item 'Number)
+                    , &unit
                   , &unit
               (enum? value)
                 do
@@ -530,16 +529,15 @@
             decode-map-as
               .unwrap $ get route :path
               , 'String
-            .each ([] :get :post :put :delete)
-              fn (key)
-                hint-fn $ {}
-                  :args $ [] 'Tag
-                  :return 'Unit
-                match (get route key)
-                  (:none) &unit
-                  (:some method) (check-method! method)
-                , &unit
-            .each (child-routes route) check-route!
+            .foldl ([] :get :post :put :delete) &unit $ fn (_acc key)
+              hint-fn $ {}
+                :args $ [] 'Unit 'Tag
+                :return 'Unit
+              match (get route key)
+                (:none) &unit
+                (:some method) (check-method! method)
+              , &unit
+            .foldl (child-routes route) &unit $ fn (_acc child) (check-route! child) &unit
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -565,7 +563,7 @@
                   and (.integer? port) (>= port 0) (<= port 65535)
                   raise "|port must be an integer between 0 and 65535"
                 check-keys! raw $ #{} :port :fallback-host :routes
-                .each routes check-route!
+                .foldl routes &unit $ fn (_acc route) (check-route! route) &unit
                 Result :ok $ Config :port port :fallback-host fallback :routes routes
               fn (error)
                 Result :err $ str error
