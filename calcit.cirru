@@ -16,8 +16,8 @@
           :schema $ quote $ Ref (Option app.schema/Config)
         'ChalkHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChalkHost
-            .red $ quote $ Fn app.config/ChalkHost String (-> String)
-            .gray $ quote $ Fn app.config/ChalkHost String (-> String)
+            .red $ Fn app.config/ChalkHost String $ -> String
+            .gray $ Fn app.config/ChalkHost String $ -> String
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
@@ -28,7 +28,7 @@
           :schema $ quote Trait
         'FileWatchHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait FileWatchHost
-            .watch-file! $ quote $ Fn app.config/FileWatchHost String JsObject
+            .watch-file! $ Fn app.config/FileWatchHost String JsObject
               Fn app.config/FileStatsHost app.config/FileStatsHost $ -> Unit
               -> JsObject
           :examples $ []
@@ -36,7 +36,7 @@
           :schema $ quote Trait
         'Json5ParserHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait Json5ParserHost
-            .parse $ quote $ Fn app.config/Json5ParserHost String (-> Dynamic)
+            .parse $ Fn app.config/Json5ParserHost String $ -> Dynamic
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
@@ -121,14 +121,14 @@
           :schema $ quote $ Ref app.main/ProxyHost
         'HttpProxyFactoryHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait HttpProxyFactoryHost
-            .create-proxy! $ quote $ Fn app.main/HttpProxyFactoryHost JsObject (-> app.main/ProxyHost)
+            .create-proxy! $ Fn app.main/HttpProxyFactoryHost JsObject $ -> app.main/ProxyHost
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
             :names $ {} $ :create-proxy! |createProxy
           :schema $ quote Trait
         'ProxyHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ProxyHost
-            .web $ quote $ Fn app.main/ProxyHost js-ffi.node/NodeRequestHost js-ffi.node/NodeServerResponseHost JsObject (-> Unit)
+            .web $ Fn app.main/ProxyHost js-ffi.node/NodeRequestHost js-ffi.node/NodeServerResponseHost JsObject $ -> Unit
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
@@ -153,10 +153,10 @@
                 rule-result $ find-match-rule segments routes
                 matched-rule $ .unwrap-or
                   decode-map-as (get rule-result :rule)
-                    :: 'Option $ :: 'Map 'Tag 'Dynamic
-                  decode-map-as ({}) (:: 'Map 'Tag 'Dynamic)
+                    Option $ Map Tag Dynamic
+                  decode-map-as ({}) (Map Tag Dynamic)
                 rule-ok? $ .unwrap-or
-                  decode-map-as (get rule-result :ok?) (:: 'Option 'Bool)
+                  decode-map-as (get rule-result :ok?) (Option Bool)
                   , false
                 info $ .unwrap-or (get matched-rule request-method) nil
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
@@ -205,7 +205,10 @@
                         mock-path $ .unwrap-or (get info :file) |
                         response-code $ .unwrap-or (get info :code) 200
                         response-delay $ .unwrap-or (get info :delay) 0
-                      respond-with-file! (decode-map-as mock-path 'String) pathname response-code response-delay cors-header send!
+                      respond-with-file! (decode-map-as mock-path 'String) pathname
+                        decode-map-as (or response-code 200) Number
+                        decode-map-as (or response-delay 0) Number
+                        , cors-header send!
                 (enum? info)
                   match info
                     (:file code mock-path)
@@ -213,13 +216,18 @@
                         hint-fn $ Fn
                           Fn Dynamic $ -> Unit
                           -> Unit
-                        respond-with-file! (decode-map-as mock-path 'String) pathname code 0 cors-header send!
+                        respond-with-file! (decode-map-as mock-path 'String) pathname
+                          decode-map-as (or code 200) Number
+                          , 0 cors-header send!
                     (:file code mock-path delay)
                       fn (send!)
                         hint-fn $ Fn
                           Fn Dynamic $ -> Unit
                           -> Unit
-                        respond-with-file! (decode-map-as mock-path 'String) pathname code delay cors-header send!
+                        respond-with-file! (decode-map-as mock-path 'String) pathname
+                          decode-map-as (or code 200) Number
+                          decode-map-as (or delay 0) Number
+                          , cors-header send!
                     _ $ do (eprintln 400 info)
                       {} (:code 400) (:message "|Unknown config")
                         :headers $ .merge cors-header schema/json-header
@@ -249,40 +257,37 @@
           :schema $ quote $ Fn (-> Unit)
         'respond-with-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn respond-with-file! (mock-path pathname code delay cors-header send!)
-            let
-                response-code $ decode-map-as (or code 200) 'Number
-                response-delay $ decode-map-as (or delay 0) 'Number
-              fs/access mock-path $ fn (err)
-                hint-fn $ Fn (JsNullish JsObject) (-> Unit) (:features :js-ffi)
-                if (js-present? err)
-                  do (println "|Need file" mock-path)
-                    send! $ {} (:code 404) (:message "|Unknown request")
-                      :headers $ .merge cors-header schema/html-header
-                      :body $ str mock-path "| not found"
-                  do
-                    println $ .gray (chalk-host) (str |sending "| " mock-path "| to " pathname)
-                    delay! response-delay $ fn ()
-                      fs/readFile mock-path |utf8 $ fn (err content)
-                        try
-                          send! $ {} (:code response-code) (:message |OK)
+            fs/access mock-path $ fn (err)
+              hint-fn $ Fn (JsNullish JsObject) (-> Unit) (:features :js-ffi)
+              if (js-present? err)
+                do (println "|Need file" mock-path)
+                  send! $ {} (:code 404) (:message "|Unknown request")
+                    :headers $ .merge cors-header schema/html-header
+                    :body $ str mock-path "| not found"
+                do
+                  println $ .gray (chalk-host) (str |sending "| " mock-path "| to " pathname)
+                  delay! delay $ fn ()
+                    fs/readFile mock-path |utf8 $ fn (err content)
+                      try
+                        send! $ {} (:code code) (:message |OK)
+                          :headers $ .merge cors-header schema/json-header
+                          :body $ js/JSON.stringify
+                            .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
+                            , nil 2
+                        fn (e)
+                          shared/console-error! $ str e
+                          send! $ {} (:code 500) (:message |Error)
                             :headers $ .merge cors-header schema/json-header
                             :body $ js/JSON.stringify
-                              .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
+                              js-object (:message |Error)
+                                :msg $ str e
+                                :error e
                               , nil 2
-                          fn (e)
-                            shared/console-error! $ str e
-                            send! $ {} (:code 500) (:message |Error)
-                              :headers $ .merge cors-header schema/json-header
-                              :body $ js/JSON.stringify
-                                js-object (:message |Error)
-                                  :msg $ str e
-                                  :error e
-                                , nil 2
-                      , &unit
-                , &unit
+                    , &unit
+              , &unit
             , &unit
           :examples $ []
-          :schema $ quote $ Fn String String Dynamic Dynamic (Map Tag String)
+          :schema $ quote $ Fn String String Number Number (Map Tag String)
             Fn Dynamic $ -> Unit
             -> Unit
             :features :js-ffi
@@ -301,7 +306,7 @@
       :defs $ {}
         'RegExpHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait RegExpHost
-            .test $ quote $ Fn app.path/RegExpHost String (-> Bool)
+            .test $ Fn app.path/RegExpHost String $ -> Bool
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
@@ -311,7 +316,7 @@
               (:none) ([])
               (:some value)
                 if (nil? value) ([])
-                  decode-map-as value $ :: 'List $ :: 'Map 'Tag 'Dynamic
+                  decode-map-as value $ List $ Map Tag Dynamic
           :examples $ []
           :schema $ quote $ Fn (Map Tag T)
             -> $ List $ Map Tag Dynamic
@@ -330,7 +335,7 @@
                         result $ match-path segments $ split-path cursor-path
                       if
                         .unwrap-or
-                          decode-map-as (get result :matches?) (:: 'Option 'Bool)
+                          decode-map-as (get result :matches?) (Option Bool)
                           , false
                         Option :some $ assoc result :rule cursor
                         recur $ rest xs
@@ -345,10 +350,10 @@
                   let
                       matched-rule $ decode-map-as
                         .unwrap-or (get matched :rule) ({})
-                        :: 'Map 'Tag 'Dynamic
+                        Map Tag Dynamic
                       remaining-segments $ decode-map-as
                         .unwrap-or (get matched :rest) ([])
-                        :: 'List 'String
+                        List String
                       next-rules $ child-routes matched-rule
                     if (empty? remaining-segments)
                       {} (:ok? true) (:rule matched-rule)
@@ -429,7 +434,7 @@
                 , &unit
               (map? value)
                 let
-                    data $ decode-map-as value $ :: 'Map 'Tag 'Dynamic
+                    data $ decode-map-as value $ Map Tag Dynamic
                   check-keys! data $ #{} :type :file :code :delay
                   when-not
                     file? $ .unwrap $ get data :type
@@ -487,7 +492,7 @@
           :code $ quote $ defn decode-config (input)
             try
               let
-                  raw $ decode-map-as input $ :: 'Map 'Tag 'Dynamic
+                  raw $ decode-map-as input $ Map Tag Dynamic
                   port $ match (get raw :port)
                     (:none) 7800
                     (:some value)
@@ -498,7 +503,7 @@
                       if (nil? value) | $ decode-map-as value 'String
                   routes $ decode-map-as
                     .unwrap $ get raw :routes
-                    :: 'List $ :: 'Map 'Tag 'Dynamic
+                    List $ Map Tag Dynamic
                 when-not
                   and (.integer? port) (>= port 0) (<= port 65535)
                   raise "|port must be an integer between 0 and 65535"
@@ -537,8 +542,8 @@
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'Config $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defstruct Config (:port 'Number) (:fallback-host 'String)
-            :routes $ quote $ List (Map Tag Dynamic)
+          :code $ quote $ defstruct Config (:port Number) (:fallback-host String)
+            :routes $ List $ Map Tag Dynamic
           :examples $ []
           :schema $ quote StructDef
         'default-config $ %{} 'CodeEntry (:doc |)
