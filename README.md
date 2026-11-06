@@ -1,12 +1,12 @@
 ## Serve JSON
 
-### 当前候选 0.0.14：正式 Calcit 0.32.1
+### 当前候选 0.0.14：正式 Calcit 0.35.1
 
-使用者影响：CLI/runtime 配对正式 **0.32.1**，直接依赖使用已发布的 Skir **0.0.35**、JS-FFI **0.2.9**；传递依赖为 Respo **0.17.1** 和 Router **0.9.0-alpha.4**，仍有一个预发布模块。请重新安装完整依赖图并生成 JS；不混用本机 main 构建与正式 runtime。
+使用者影响：CLI/runtime 配对正式 **0.35.1**，直接依赖使用正式 Skir **0.0.39** 和 JS FFI **0.2.13**，传递依赖为 Respo **0.19.4** 和 Router **0.12.1**。请重新安装完整依赖图并生成 JS；不混用本机 main 构建与正式 runtime。
 
 配置格式、HTTP 状态码、CORS、文件监听、代理行为和原监听地址不变。沿用配置检查中已审阅的四处 `.foldl`，以 Unit 累积，保持原顺序、校验与异常传播；不把回调参数改为 Dynamic，也不新增运行时强转。相关上游合同问题见 [Calcit #2449](https://github.com/calcit-lang/calcit/issues/2449)。Enum 的三处 `count` 保留含 tag 的 Countable 语义。
 
-官方 formatter 转换16处旧类型形式；34个项目定义的官方查询视图与规范化主线相同，代码、schema、断言不变。原质量基线与门禁保留；完整 strict、两项附带测试、四项 Node 测试与24项合成回环 HTTP 验收通过。Chalk/http-proxy 两处 FFI trust 边界仍保留，不宣称全部类型债务清零。不增加永久验收脚本或编译器改写规则。
+文件响应函数接收 Number 状态码和延迟，兼容原 Map 和 Enum 方法配置。原质量基线、两项附带测试和四项 Node 测试通过；四项合成回环请求覆盖默认状态码、自定义状态码、文件缺失和未匹配路径。
 
 0.0.14 仍是未发布候选，本轮不创建 release/npm 包、不部署或重启服务。此项目没有前端资源，不添加 COS/CDN 配置。
 
@@ -114,7 +114,7 @@ When `:fallback-host` is specified, it will be used as a default proxy target wh
 
 ### 开发
 
-使用配对的正式 Calcit / `@calcit/procs` 0.32.1、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
+使用配对的正式 Calcit / `@calcit/procs` 0.35.1、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
 
 ```bash
 caps --strict --ci
@@ -128,7 +128,7 @@ calcit js
 node --test test/cli-argv.test.mjs test/delay.test.mjs
 ```
 
-Action 使用与原已审查提交对应的精确正式 tag，按既定维护策略接受 tag 可移动风险；原只读权限和不保留 checkout 凭据保持。质量命令在0.32.1已标记废弃，但本轮仍保留原质量基线门禁，不因迁移而删除或放宽。
+Action 使用与原已审查提交对应的精确正式 tag，按既定维护策略接受 tag 可移动风险；原只读权限和不保留 checkout 凭据保持。质量命令在0.35.1已标记废弃，但本轮仍保留原质量基线门禁，不因迁移而删除或放宽。
 
 入口明确使用 JavaScript/Node 目标。`js-out/` 是构建产物，不提交到 Git，但保留在 npm 包中供 CLI 运行。本项目没有前端页面，不配置 COS/CDN；原 npm 发版流程保留，升级 PR 不自动发布。
 
