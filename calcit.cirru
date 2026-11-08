@@ -151,14 +151,9 @@
                   , |
                 segments $ split-path pathname
                 rule-result $ find-match-rule segments routes
-                matched-rule $ .unwrap-or
-                  decode-map-as (get rule-result :rule)
-                    Option $ Map Tag Dynamic
-                  decode-map-as ({}) (Map Tag Dynamic)
-                rule-ok? $ .unwrap-or
-                  decode-map-as (get rule-result :ok?) (Option Bool)
-                  , false
-                method-info $ get matched-rule request-method
+                method-info $ match rule-result
+                  (:found rule) (get rule request-method)
+                  (:missing _ _) (Option :none)
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
@@ -170,14 +165,14 @@
                     :body $ js/JSON.stringify
                       to-js-data $ {}
                         :message $ str "|This is a data mocking server."
-                        :choices $ list-paths routes
+                        :choices $ encode-map-as (list-paths routes) (List app.path/PathChoice)
                       , nil 2
                 (= :options request-method)
                   {} (:code 200) (:message |OK) (:headers cors-header) (:body |OK)
                 (= pathname |/favicon.ico)
                   {} (:code 301)
                     :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
-                (or (not rule-ok?) (not (match method-info ((:some value) (non-nil? value)) ((:none) false))))
+                (not (match method-info ((:some value) (non-nil? value)) ((:none) false)))
                   if (not= fallback-host |)
                     do
                       println $ .gray (chalk-host) (str "|proxy to " fallback-host "| " pathname)
@@ -194,7 +189,11 @@
                         :body $ js/JSON.stringify
                           js-object
                             :message $ str "|No matching path for " pathname
-                            :reason $ to-js-data rule-result
+                            :reason $ match rule-result
+                              (:found rule)
+                                to-js-data $ {} (:ok? true) (:rule rule)
+                              (:missing remaining choices)
+                                to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
                           , nil 2
                 true $ let
                     info $ .unwrap method-info
@@ -246,7 +245,9 @@
                       {} (:code 400) (:message "|Unknown request")
                         :headers $ .merge cors-header schema/json-header
                         :body $ js-object (:code 400) (:message "|Unknown rule")
-                          :rule $ to-js-data matched-rule
+                          :rule $ match rule-result
+                            (:found rule) (to-js-data rule)
+                            (:missing _ _) (js-object)
                           :info $ to-js-data info
           :examples $ []
           :schema $ quote $ Fn skir.schema/Request js-ffi.node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
@@ -310,12 +311,23 @@
             js-ffi.shared :as shared
     'app.path $ %{} 'FileEntry
       :defs $ {}
+        'PathChoice $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct PathChoice (:path String)
+            :methods $ List Tag
+          :examples $ []
+          :schema $ quote StructDef
         'RegExpHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait RegExpHost
             .test $ Fn app.path/RegExpHost String $ -> Bool
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
+        'RouteMatch $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum RouteMatch
+            :found $ Map Tag Dynamic
+            :missing (List String) (List String)
+          :examples $ []
+          :schema $ quote EnumDef
         'child-routes $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn child-routes (rule)
             match (get rule :next)
@@ -329,45 +341,29 @@
             :generics T
         'find-match-rule $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-match-rule (segments rules)
-            let
-                current-match $ loop
-                    xs rules
-                  if (empty? xs) (Option :none)
-                    let
-                        cursor $ .unwrap $ first xs
-                        cursor-path $ decode-map-as
-                          .unwrap-or (get cursor :path) |
-                          , 'String
-                        result $ match-path segments $ split-path cursor-path
-                      if
-                        .unwrap-or
-                          decode-map-as (get result :matches?) (Option Bool)
-                          , false
-                        Option :some $ assoc result :rule cursor
-                        recur $ rest xs
-              match current-match
+            loop
+                candidates rules
+              match (destruct-list candidates)
                 (:none)
-                  {} (:ok? false) (:segments segments)
-                    :choices $ map rules $ fn (r)
-                      decode-map-as
-                        .unwrap-or (get r :path) |
-                        , 'String
-                (:some matched)
+                  RouteMatch :missing segments $ map rules $ fn (rule)
+                    decode-map-as
+                      .unwrap-or (get rule :path) |
+                      , 'String
+                (:some rule more)
                   let
-                      matched-rule $ decode-map-as
-                        .unwrap-or (get matched :rule) ({})
-                        Map Tag Dynamic
-                      remaining-segments $ decode-map-as
-                        .unwrap-or (get matched :rest) ([])
-                        List String
-                      next-rules $ child-routes matched-rule
-                    if (empty? remaining-segments)
-                      {} (:ok? true) (:rule matched-rule)
-                      recur remaining-segments next-rules
+                      rule-path $ decode-map-as
+                        .unwrap-or (get rule :path) |
+                        , 'String
+                    match
+                      match-path segments $ split-path rule-path
+                      (:none) (recur more)
+                      (:some remaining)
+                        if (empty? remaining) (RouteMatch :found rule)
+                          find-match-rule remaining $ child-routes rule
           :examples $ []
           :schema $ quote $ Fn (List String)
             List $ Map Tag Dynamic
-            -> $ Map Tag Dynamic
+            -> app.path/RouteMatch
         'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn letter-number-pattern ()
             js-cast (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
@@ -377,48 +373,40 @@
           :code $ quote $ defn list-paths (routes)
             -> routes $ mapcat $ fn (rule)
               hint-fn $ Fn (Map Tag Dynamic)
-                -> $ List $ Map Tag Dynamic
-              concat
-                [] $ {}
-                  :path $ decode-map-as
+                -> $ List app.path/PathChoice
+              let
+                  path $ decode-map-as
                     .unwrap-or (get rule :path) |
                     , 'String
-                  :methods $ &set:to-list $ exclude (keys rule) :path :next
-                ->
-                  list-paths $ child-routes rule
-                  map $ fn (x)
-                    let
-                        parent-path $ decode-map-as
-                          .unwrap-or (get rule :path) |
-                          , 'String
-                        child-path $ decode-map-as
-                          .unwrap-or (get x :path) |
-                          , 'String
-                      {}
-                        :path $ str parent-path |/ child-path
-                        :methods $ .unwrap-or (get x :methods) ([])
+                  methods $ &set:to-list $ exclude (keys rule) :path :next
+                concat
+                  [] $ PathChoice :path path :methods methods
+                  map
+                    list-paths $ child-routes rule
+                    fn (child)
+                      hint-fn $ Fn app.path/PathChoice $ -> app.path/PathChoice
+                      struct-with child $ :path $ str path |/ (:path child)
           :examples $ []
           :schema $ quote $ Fn
             List $ Map Tag Dynamic
-            -> $ List $ Map Tag Dynamic
+            -> $ List app.path/PathChoice
         'match-path $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn match-path (segments rule-path) (; println |matching segments rule-path)
-            if (empty? rule-path)
-              {} (:matches? true) (:rest segments)
+          :code $ quote $ defn match-path (segments rule-path)
+            if (empty? rule-path) (Option :some segments)
               let
                   segment $ .unwrap-or (first segments) |
                   rule-segment $ .unwrap-or (first rule-path) |
                 cond
                     empty? segments
-                    {} (:matches false) (:rest segments) (:rest-rule rule-path)
+                    Option :none
                   (= segment rule-segment)
                     recur (rest segments) (rest rule-path)
                   (or (starts-with? rule-segment |:) (.test (letter-number-pattern) rule-segment))
                     recur (rest segments) (rest rule-path)
-                  true $ {} (:matches? false) (:rest segments) (:rest-rule rule-path)
+                  true $ Option :none
           :examples $ []
           :schema $ quote $ Fn (List String) (List String)
-            -> $ Map Tag Dynamic
+            -> $ Option $ List String
             :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.path

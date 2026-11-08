@@ -1,14 +1,12 @@
 ## Serve JSON
 
-### 当前候选 0.0.14：正式 Calcit 0.37.0
+### Calcit 0.38.0 升级
 
-使用者影响：CLI/runtime 配对正式 **0.37.0**，直接依赖使用正式 Skir **0.0.40** 和 JS FFI **0.2.13**，传递依赖为 Respo **0.19.5** 和 Router **0.12.2**。请重新安装完整依赖图并生成 JS；不混用本机 main 构建与正式 runtime。
+请配对使用 Calcit CLI 和 `@calcit/procs` 0.38.0，按 `deps.cirru` 安装依赖并重新生成 JS。
+现有 JSON、JSON5 和 Cirru EDN 配置、嵌套路由及响应格式继续适用。
 
-配置格式、HTTP 状态码、CORS、文件监听、代理行为和原监听地址不变。沿用配置检查中已审阅的四处 `.foldl`，以 Unit 累积，保持原顺序、校验与异常传播；不把回调参数改为 Dynamic，也不新增运行时强转。相关上游合同问题见 [Calcit #2449](https://github.com/calcit-lang/calcit/issues/2449)。Enum 的三处 `count` 保留含 tag 的 Countable 语义。
-
-文件响应函数接收 Number 状态码和延迟，兼容原 Map 和 Enum 方法配置。原质量基线、两项附带测试和四项 Node 测试通过；四项合成回环请求覆盖默认状态码、自定义状态码、文件缺失和未匹配路径。
-
-0.0.14 仍是未发布候选，本轮不创建 release/npm 包、不部署或重启服务。此项目没有前端资源，不添加 COS/CDN 配置。
+路由匹配区分匹配和未匹配两种结果，首页路由列表使用具体的路径和方法字段。
+这些内部类型在 HTTP 输出处按原有结构序列化。
 
 ### Usage
 
