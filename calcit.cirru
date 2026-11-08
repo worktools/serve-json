@@ -158,11 +158,11 @@
                 rule-ok? $ .unwrap-or
                   decode-map-as (get rule-result :ok?) (Option Bool)
                   , false
-                info $ .unwrap-or (get matched-rule request-method) nil
+                method-info $ get matched-rule request-method
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
-              ; println "|find rule" pathname rule-result info request-method
+              ; println "|find rule" pathname rule-result method-info request-method
               cond
                   = pathname |/
                   {} (:code 200) (:message |OK)
@@ -177,7 +177,7 @@
                 (= pathname |/favicon.ico)
                   {} (:code 301)
                     :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
-                (or (not rule-ok?) (nil? info))
+                (or (not rule-ok?) (not (match method-info ((:some value) (non-nil? value)) ((:none) false))))
                   if (not= fallback-host |)
                     do
                       println $ .gray (chalk-host) (str "|proxy to " fallback-host "| " pathname)
@@ -196,52 +196,58 @@
                             :message $ str "|No matching path for " pathname
                             :reason $ to-js-data rule-result
                           , nil 2
-                (and (map? info) (file? (.unwrap-or (get info :type) nil)))
-                  fn (send!)
-                    hint-fn $ Fn
-                      Fn Dynamic $ -> Unit
-                      -> Unit
-                    let
-                        mock-path $ .unwrap-or (get info :file) |
-                        response-code $ .unwrap-or (get info :code) 200
-                        response-delay $ .unwrap-or (get info :delay) 0
-                      respond-with-file! (decode-map-as mock-path 'String) pathname
-                        decode-map-as (or response-code 200) Number
-                        decode-map-as (or response-delay 0) Number
-                        , cors-header send!
-                (enum? info)
-                  match info
-                    (:file code mock-path)
+                true $ let
+                    info $ .unwrap method-info
+                  cond
+                      and (map? info)
+                        match (get info :type)
+                          (:some kind) (file? kind)
+                          (:none) false
                       fn (send!)
                         hint-fn $ Fn
                           Fn Dynamic $ -> Unit
                           -> Unit
-                        respond-with-file! (decode-map-as mock-path 'String) pathname
-                          decode-map-as (or code 200) Number
-                          , 0 cors-header send!
-                    (:file code mock-path delay)
-                      fn (send!)
-                        hint-fn $ Fn
-                          Fn Dynamic $ -> Unit
-                          -> Unit
-                        respond-with-file! (decode-map-as mock-path 'String) pathname
-                          decode-map-as (or code 200) Number
-                          decode-map-as (or delay 0) Number
-                          , cors-header send!
-                    _ $ do (eprintln 400 info)
-                      {} (:code 400) (:message "|Unknown config")
+                        let
+                            mock-path $ .unwrap-or (get info :file) |
+                            response-code $ .unwrap-or (get info :code) 200
+                            response-delay $ .unwrap-or (get info :delay) 0
+                          respond-with-file! (decode-map-as mock-path 'String) pathname
+                            decode-map-as (or response-code 200) Number
+                            decode-map-as (or response-delay 0) Number
+                            , cors-header send!
+                    (enum? info)
+                      match info
+                        (:file code mock-path)
+                          fn (send!)
+                            hint-fn $ Fn
+                              Fn Dynamic $ -> Unit
+                              -> Unit
+                            respond-with-file! (decode-map-as mock-path 'String) pathname
+                              decode-map-as (or code 200) Number
+                              , 0 cors-header send!
+                        (:file code mock-path delay)
+                          fn (send!)
+                            hint-fn $ Fn
+                              Fn Dynamic $ -> Unit
+                              -> Unit
+                            respond-with-file! (decode-map-as mock-path 'String) pathname
+                              decode-map-as (or code 200) Number
+                              decode-map-as (or delay 0) Number
+                              , cors-header send!
+                        _ $ do (eprintln 400 info)
+                          {} (:code 400) (:message "|Unknown config")
+                            :headers $ .merge cors-header schema/json-header
+                            :body $ js/JSON.stringify
+                              js-object
+                                :message $ str "|No matching path for " pathname
+                                :reason $ to-js-data info
+                              , nil 2
+                    true $ do (println "|Bad result for rule" pathname request-method info)
+                      {} (:code 400) (:message "|Unknown request")
                         :headers $ .merge cors-header schema/json-header
-                        :body $ js/JSON.stringify
-                          js-object
-                            :message $ str "|No matching path for " pathname
-                            :reason $ to-js-data info
-                          , nil 2
-                true $ do (println "|Bad result for rule" pathname request-method info)
-                  {} (:code 400) (:message "|Unknown request")
-                    :headers $ .merge cors-header schema/json-header
-                    :body $ js-object (:code 400) (:message "|Unknown rule")
-                      :rule $ to-js-data matched-rule
-                      :info $ to-js-data info
+                        :body $ js-object (:code 400) (:message "|Unknown rule")
+                          :rule $ to-js-data matched-rule
+                          :info $ to-js-data info
           :examples $ []
           :schema $ quote $ Fn skir.schema/Request js-ffi.node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
