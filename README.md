@@ -1,8 +1,8 @@
 ## Serve JSON
 
-### 当前候选 0.0.14：正式 Calcit 0.35.1
+### 当前候选 0.0.14：正式 Calcit 0.37.0
 
-使用者影响：CLI/runtime 配对正式 **0.35.1**，直接依赖使用正式 Skir **0.0.39** 和 JS FFI **0.2.13**，传递依赖为 Respo **0.19.4** 和 Router **0.12.1**。请重新安装完整依赖图并生成 JS；不混用本机 main 构建与正式 runtime。
+使用者影响：CLI/runtime 配对正式 **0.37.0**，直接依赖使用正式 Skir **0.0.40** 和 JS FFI **0.2.13**，传递依赖为 Respo **0.19.5** 和 Router **0.12.2**。请重新安装完整依赖图并生成 JS；不混用本机 main 构建与正式 runtime。
 
 配置格式、HTTP 状态码、CORS、文件监听、代理行为和原监听地址不变。沿用配置检查中已审阅的四处 `.foldl`，以 Unit 累积，保持原顺序、校验与异常传播；不把回调参数改为 Dynamic，也不新增运行时强转。相关上游合同问题见 [Calcit #2449](https://github.com/calcit-lang/calcit/issues/2449)。Enum 的三处 `count` 保留含 tag 的 Countable 语义。
 
@@ -114,7 +114,7 @@ When `:fallback-host` is specified, it will be used as a default proxy target wh
 
 ### 开发
 
-使用配对的正式 Calcit / `@calcit/procs` 0.35.1、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
+使用配对的正式 Calcit / `@calcit/procs` 0.37.0、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
 
 ```bash
 caps --strict --ci
