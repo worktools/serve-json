@@ -119,6 +119,10 @@
           :code $ quote $ defref *proxy (create-proxy!)
           :examples $ []
           :schema $ quote $ Ref app.main/ProxyHost
+        'FileMethod $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct FileMethod (:path String) (:code Number) (:delay Number)
+          :examples $ []
+          :schema $ quote StructDef
         'HttpProxyFactoryHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait HttpProxyFactoryHost
             .create-proxy! $ Fn app.main/HttpProxyFactoryHost JsObject $ -> app.main/ProxyHost
@@ -137,6 +141,39 @@
             .create-proxy! (unsafe-coerce http-proxy 'app.main/HttpProxyFactoryHost) (js-object)
           :examples $ []
           :schema $ quote $ Fn (-> app.main/ProxyHost) (:features :js-ffi)
+        'decode-file-method $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-file-method (info)
+            cond
+                and (map? info)
+                  match (get info :type)
+                    (:some kind) (file? kind)
+                    (:none) false
+                let
+                    path $ .unwrap-or (get info :file) |
+                    code $ .unwrap-or (get info :code) 200
+                    delay $ .unwrap-or (get info :delay) 0
+                  Option :some $ file-method path code delay
+              (enum? info)
+                match info
+                  (:file code path)
+                    Option :some $ file-method path code 0
+                  (:file code path delay)
+                    Option :some $ file-method path code delay
+                  _ $ Option :none
+              true $ Option :none
+          :examples $ []
+          :schema $ quote $ Fn Input
+            -> $ Option app.main/FileMethod
+            :generics Input
+        'file-method $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn file-method (path code delay)
+            let
+                filename $ decode-map-as path 'String
+                status $ decode-map-as (or code 200) Number
+                timeout $ decode-map-as (or delay 0) Number
+              FileMethod :path filename :code status :delay timeout
+          :examples $ []
+          :schema $ quote $ Fn Path Code Delay (-> app.main/FileMethod) (:generics Path Code Delay)
         'handle-request! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn handle-request! (req res)
             let
@@ -197,43 +234,16 @@
                           , nil 2
                 true $ let
                     info $ .unwrap method-info
-                  cond
-                      and (map? info)
-                        match (get info :type)
-                          (:some kind) (file? kind)
-                          (:none) false
+                  match (decode-file-method info)
+                    (:some file)
                       fn (send!)
                         hint-fn $ Fn
                           Fn Dynamic $ -> Unit
                           -> Unit
-                        let
-                            mock-path $ .unwrap-or (get info :file) |
-                            response-code $ .unwrap-or (get info :code) 200
-                            response-delay $ .unwrap-or (get info :delay) 0
-                          respond-with-file! (decode-map-as mock-path 'String) pathname
-                            decode-map-as (or response-code 200) Number
-                            decode-map-as (or response-delay 0) Number
-                            , cors-header send!
-                    (enum? info)
-                      match info
-                        (:file code mock-path)
-                          fn (send!)
-                            hint-fn $ Fn
-                              Fn Dynamic $ -> Unit
-                              -> Unit
-                            respond-with-file! (decode-map-as mock-path 'String) pathname
-                              decode-map-as (or code 200) Number
-                              , 0 cors-header send!
-                        (:file code mock-path delay)
-                          fn (send!)
-                            hint-fn $ Fn
-                              Fn Dynamic $ -> Unit
-                              -> Unit
-                            respond-with-file! (decode-map-as mock-path 'String) pathname
-                              decode-map-as (or code 200) Number
-                              decode-map-as (or delay 0) Number
-                              , cors-header send!
-                        _ $ do (eprintln 400 info)
+                        respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header send!
+                    (:none)
+                      if (enum? info)
+                        do (eprintln 400 info)
                           {} (:code 400) (:message "|Unknown config")
                             :headers $ .merge cors-header schema/json-header
                             :body $ js/JSON.stringify
@@ -241,14 +251,14 @@
                                 :message $ str "|No matching path for " pathname
                                 :reason $ to-js-data info
                               , nil 2
-                    true $ do (println "|Bad result for rule" pathname request-method info)
-                      {} (:code 400) (:message "|Unknown request")
-                        :headers $ .merge cors-header schema/json-header
-                        :body $ js-object (:code 400) (:message "|Unknown rule")
-                          :rule $ match rule-result
-                            (:found rule) (to-js-data rule)
-                            (:missing _ _) (js-object)
-                          :info $ to-js-data info
+                        do (println "|Bad result for rule" pathname request-method info)
+                          {} (:code 400) (:message "|Unknown request")
+                            :headers $ .merge cors-header schema/json-header
+                            :body $ js-object (:code 400) (:message "|Unknown rule")
+                              :rule $ match rule-result
+                                (:found rule) (to-js-data rule)
+                                (:missing _ _) (js-object)
+                              :info $ to-js-data info
           :examples $ []
           :schema $ quote $ Fn skir.schema/Request js-ffi.node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
