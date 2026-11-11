@@ -390,12 +390,12 @@
         'list-paths $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn list-paths (routes)
             -> routes $ mapcat $ fn (rule)
-              hint-fn $ Fn (Map Tag Dynamic)
+              hint-fn $ Fn (Map Tag V)
                 -> $ List app.path/PathChoice
               let
-                  path $ decode-map-as
-                    .unwrap-or (get rule :path) |
-                    , 'String
+                  path $ match (get rule :path)
+                    (:none) |
+                    (:some value) (decode-map-as value 'String)
                   methods $ &set:to-list $ exclude (keys rule) :path :next
                 concat
                   [] $ PathChoice :path path :methods methods
@@ -406,8 +406,9 @@
                       struct-with child $ :path $ str path |/ (:path child)
           :examples $ []
           :schema $ quote $ Fn
-            List $ Map Tag Dynamic
+            List $ Map Tag V
             -> $ List PathChoice
+            :generics V
         'match-path $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn match-path (segments rule-path)
             if (empty? rule-path) (Some segments)
