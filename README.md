@@ -1,8 +1,8 @@
 ## Serve JSON
 
-### Calcit 0.40.0 升级
+### Calcit 0.41.0 升级
 
-请配对使用 Calcit CLI 和 `@calcit/procs` 0.40.0，按 `deps.cirru` 安装依赖并重新生成 JS。
+请配对使用 Calcit CLI 和 `@calcit/procs` 0.41.0，按 `deps.cirru` 安装依赖并重新生成 JS。
 现有 JSON、JSON5 和 Cirru EDN 配置、嵌套路由及响应格式继续适用。
 
 路由匹配区分匹配和未匹配两种结果，首页路由列表使用具体的路径和方法字段。

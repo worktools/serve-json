@@ -11,9 +11,9 @@
     'app.config $ %{} 'FileEntry
       :defs $ {}
         '*configs $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defref *configs (Option :none)
+          :code $ quote $ defref *configs None
           :examples $ []
-          :schema $ quote $ Ref (Option app.schema/Config)
+          :schema $ quote $ Ref (Option schema/Config)
         'ChalkHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait ChalkHost
             .red $ Fn app.config/ChalkHost String $ -> String
@@ -43,10 +43,10 @@
         'chalk-host $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn chalk-host () (unsafe-coerce chalk 'app.config/ChalkHost)
           :examples $ []
-          :schema $ quote $ Fn (-> app.config/ChalkHost) (:features :js-ffi)
+          :schema $ quote $ Fn (-> ChalkHost) (:features :js-ffi)
         'detect-config-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn detect-config-file! ()
-            if (node/file-exists? |config.cirru) (Option :some |config.cirru) (Option :none)
+            if (node/file-exists? |config.cirru) (Some |config.cirru) None
           :examples $ []
           :schema $ quote $ Fn
             -> $ Option String
@@ -54,7 +54,7 @@
           :code $ quote $ defn load-config! ()
             let
                 selected $ match (node/argv-at 2)
-                  (:some path) (Option :some path)
+                  (:some path) (Some path)
                   (:none) (detect-config-file!)
               match selected
                 (:none)
@@ -96,7 +96,7 @@
                 match (decode-config raw)
                   (:ok config)
                     do
-                      reset! *configs $ Option :some config
+                      reset! *configs $ Some config
                       println "|Loaded config from" config-path
                       , true
                   (:err message)
@@ -118,11 +118,15 @@
         '*proxy $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defref *proxy (create-proxy!)
           :examples $ []
-          :schema $ quote $ Ref app.main/ProxyHost
+          :schema $ quote $ Ref ProxyHost
         'FileMethod $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct FileMethod (:path String) (:code Number) (:delay Number)
           :examples $ []
           :schema $ quote StructDef
+        'FileResponseValue $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion FileResponseValue Number String (Map Tag String)
+          :examples $ []
+          :schema $ quote UnionDef
         'HttpProxyFactoryHost $ %{} 'CodeEntry (:doc |)
           :code $ quote $ deftrait HttpProxyFactoryHost
             .create-proxy! $ Fn app.main/HttpProxyFactoryHost JsObject $ -> app.main/ProxyHost
@@ -140,7 +144,7 @@
           :code $ quote $ defn create-proxy! ()
             .create-proxy! (unsafe-coerce http-proxy 'app.main/HttpProxyFactoryHost) (js-object)
           :examples $ []
-          :schema $ quote $ Fn (-> app.main/ProxyHost) (:features :js-ffi)
+          :schema $ quote $ Fn (-> ProxyHost) (:features :js-ffi)
         'decode-file-method $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-file-method (info)
             cond
@@ -152,18 +156,18 @@
                     path $ .unwrap-or (get info :file) |
                     code $ .unwrap-or (get info :code) 200
                     delay $ .unwrap-or (get info :delay) 0
-                  Option :some $ file-method path code delay
+                  Some $ file-method path code delay
               (enum? info)
                 match info
                   (:file code path)
-                    Option :some $ file-method path code 0
+                    Some $ file-method path code 0
                   (:file code path delay)
-                    Option :some $ file-method path code delay
-                  _ $ Option :none
-              true $ Option :none
+                    Some $ file-method path code delay
+                  _ None
+              true None
           :examples $ []
           :schema $ quote $ Fn Input
-            -> $ Option app.main/FileMethod
+            -> $ Option FileMethod
             :generics Input
         'file-method $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn file-method (path code delay)
@@ -173,7 +177,7 @@
                 timeout $ decode-map-as (or delay 0) Number
               FileMethod :path filename :code status :delay timeout
           :examples $ []
-          :schema $ quote $ Fn Path Code Delay (-> app.main/FileMethod) (:generics Path Code Delay)
+          :schema $ quote $ Fn Path Code Delay (-> FileMethod) (:generics Path Code Delay)
         'handle-request! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn handle-request! (req res)
             let
@@ -190,7 +194,7 @@
                 rule-result $ find-match-rule segments routes
                 method-info $ match rule-result
                   (:found rule) (get rule request-method)
-                  (:missing _ _) (Option :none)
+                  (:missing _ _) None
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
@@ -260,14 +264,14 @@
                                 (:missing _ _) (js-object)
                               :info $ to-js-data info
           :examples $ []
-          :schema $ quote $ Fn skir.schema/Request js-ffi.node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (load-console-formatter!)
             when-not (load-config!) (node/exit! 1)
-            skir/create-server! handle-request! $ Option :some $ {}
+            skir/create-server! handle-request! $ Some $ {}
               :port $ :port $ .unwrap-or @*configs schema/default-config
           :examples $ []
-          :schema $ quote $ Fn (-> js-ffi.node/NodeServerHost) (:features :js-ffi)
+          :schema $ quote $ Fn (-> node/NodeServerHost) (:features :js-ffi)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |Reloaded.)
           :examples $ []
@@ -288,24 +292,28 @@
                       try
                         send! $ {} (:code code) (:message |OK)
                           :headers $ .merge cors-header schema/json-header
-                          :body $ js/JSON.stringify
-                            .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
-                            , nil 2
+                          :body $ decode-map-as
+                            js/JSON.stringify
+                              .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
+                              , nil 2
+                            , String
                         fn (e)
                           shared/console-error! $ str e
                           send! $ {} (:code 500) (:message |Error)
                             :headers $ .merge cors-header schema/json-header
-                            :body $ js/JSON.stringify
-                              js-object (:message |Error)
-                                :msg $ str e
-                                :error e
-                              , nil 2
+                            :body $ decode-map-as
+                              js/JSON.stringify
+                                js-object (:message |Error)
+                                  :msg $ str e
+                                  :error e
+                                , nil 2
+                              , String
                     , &unit
               , &unit
             , &unit
           :examples $ []
           :schema $ quote $ Fn String String Number Number (Map Tag String)
-            Fn Dynamic $ -> Unit
+            Fn (Map Tag FileResponseValue) (-> Unit)
             -> Unit
             :features :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
@@ -373,12 +381,12 @@
           :examples $ []
           :schema $ quote $ Fn (List String)
             List $ Map Tag Dynamic
-            -> app.path/RouteMatch
+            -> RouteMatch
         'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn letter-number-pattern ()
             js-cast (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
           :examples $ []
-          :schema $ quote $ Fn (-> app.path/RegExpHost) (:features :js-ffi)
+          :schema $ quote $ Fn (-> RegExpHost) (:features :js-ffi)
         'list-paths $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn list-paths (routes)
             -> routes $ mapcat $ fn (rule)
@@ -399,21 +407,21 @@
           :examples $ []
           :schema $ quote $ Fn
             List $ Map Tag Dynamic
-            -> $ List app.path/PathChoice
+            -> $ List PathChoice
         'match-path $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn match-path (segments rule-path)
-            if (empty? rule-path) (Option :some segments)
+            if (empty? rule-path) (Some segments)
               let
                   segment $ .unwrap-or (first segments) |
                   rule-segment $ .unwrap-or (first rule-path) |
                 cond
                     empty? segments
-                    Option :none
+                    , None
                   (= segment rule-segment)
                     recur (rest segments) (rest rule-path)
                   (or (starts-with? rule-segment |:) (.test (letter-number-pattern) rule-segment))
                     recur (rest segments) (rest rule-path)
-                  true $ Option :none
+                  true None
           :examples $ []
           :schema $ quote $ Fn (List String) (List String)
             -> $ Option $ List String
@@ -475,7 +483,7 @@
                   , &unit
               true $ raise "|method must be a Map, Enum or nil"
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit)
+          :schema $ quote $ Fn Input (-> Unit) (:generics Input)
         'check-route! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn check-route! (route)
             check-keys! route $ #{} :path :get :post :put :delete :next
@@ -517,8 +525,9 @@
               fn (error)
                 Result :err $ str error
           :examples $ []
-          :schema $ quote $ Fn Dynamic
-            -> $ Result app.schema/Config String
+          :schema $ quote $ Fn Input
+            -> $ Result Config String
+            :generics Input
           :tests $ [] $ %{} 'TestEntry (:name |port-range)
             :code $ quote $ do
               .each ([] 0 7800 65535)
@@ -554,7 +563,7 @@
           :code $ quote $ def default-config
             Config :port 7800 :fallback-host | :routes $ []
           :examples $ []
-          :schema $ quote app.schema/Config
+          :schema $ quote Config
         'html-header $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def html-header
             {} $ :Content-Type |text/html
@@ -582,9 +591,11 @@
             :features :js-ffi
         'file? $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn file? (x)
-            or (= :file x) (= |file x)
+            or
+              and (tag? x) (= :file x)
+              and (string? x) (= |file x)
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Bool)
+          :schema $ quote $ Fn Input (-> Bool) (:generics Input)
         'split-path $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn split-path (x)
             -> (split x |/)
