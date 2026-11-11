@@ -1,0 +1,32 @@
+{
+  "coverage": {
+    "app.main/handle-request!": "partial",
+    "app.path/child-routes": "partial",
+    "app.path/find-match-rule": "partial",
+    "app.path/list-paths": "partial"
+  },
+  "weak": {
+    "app.config/chalk-host": {
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.main/create-proxy!": {
+      "unsafe-coerce/explicit-unsafe": 1
+    },
+    "app.main/handle-request!": {
+      "code-nil/unresolved": 3,
+      "schema-dynamic/intentional-js-ffi": 1
+    },
+    "app.main/respond-with-file!": {
+      "code-nil/unresolved": 2
+    },
+    "app.path/child-routes": {
+      "schema-dynamic/unresolved": 1
+    },
+    "app.path/find-match-rule": {
+      "schema-dynamic/unresolved": 1
+    },
+    "app.path/list-paths": {
+      "schema-dynamic/unresolved": 1
+    }
+  }
+}
