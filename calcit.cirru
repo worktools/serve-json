@@ -69,7 +69,7 @@
                           .watch-file! (js-cast fs 'app.config/FileWatchHost) config-path
                             js-object $ :interval 100
                             fn (current previous)
-                              hint-fn $ Fn app.config/FileStatsHost app.config/FileStatsHost (-> Unit) (:features :js-ffi)
+                              hint-fn $ Fn FileStatsHost FileStatsHost (-> Unit) (:features :js-ffi)
                               when
                                 or
                                   not= (.-mtime-ms current) (.-mtime-ms previous)
@@ -242,7 +242,7 @@
                     (:some file)
                       fn (send!)
                         hint-fn $ Fn
-                          Fn Dynamic $ -> Unit
+                          Fn (Map Tag FileResponseValue) (-> Unit)
                           -> Unit
                         respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header send!
                     (:none)
@@ -391,7 +391,7 @@
           :code $ quote $ defn list-paths (routes)
             -> routes $ mapcat $ fn (rule)
               hint-fn $ Fn (Map Tag V)
-                -> $ List app.path/PathChoice
+                -> $ List PathChoice
               let
                   path $ match (get rule :path)
                     (:none) |
@@ -402,7 +402,7 @@
                   map
                     list-paths $ child-routes rule
                     fn (child)
-                      hint-fn $ Fn app.path/PathChoice $ -> app.path/PathChoice
+                      hint-fn $ Fn PathChoice $ -> PathChoice
                       struct-with child $ :path $ str path |/ (:path child)
           :examples $ []
           :schema $ quote $ Fn
