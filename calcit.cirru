@@ -79,7 +79,7 @@
                           , true
                         , false
           :examples $ []
-          :schema $ quote $ Fn (-> Bool) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Bool) (:features :io :js-ffi :state)
         'load-config-from-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn load-config-from-file! (config-path)
             try
@@ -105,7 +105,7 @@
                 eprintln $ str error
                 , false
           :examples $ []
-          :schema $ quote $ Fn String (-> Bool) (:features :js-ffi)
+          :schema $ quote $ Fn String (-> Bool) (:features :io :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
           :require (|chalk :default chalk) (|json5 :default JSON5)
@@ -264,18 +264,18 @@
                                 (:missing _ _) (js-object)
                               :info $ to-js-data info
           :examples $ []
-          :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> Dynamic) (:features :js-ffi)
+          :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> Dynamic) (:features :io :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (load-console-formatter!)
             when-not (load-config!) (node/exit! 1)
             skir/create-server! handle-request! $ Some $ {}
               :port $ :port $ .unwrap-or @*configs schema/default-config
           :examples $ []
-          :schema $ quote $ Fn (-> node/NodeServerHost) (:features :js-ffi)
+          :schema $ quote $ Fn (-> node/NodeServerHost) (:features :io :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println |Reloaded.)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit)
+          :schema $ quote $ Fn (-> Unit) (:features :io)
         'respond-with-file! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn respond-with-file! (mock-path pathname code delay cors-header send!)
             fs/access mock-path $ fn (err)
@@ -315,7 +315,7 @@
           :schema $ quote $ Fn String String Number Number (Map Tag String)
             Fn (Map Tag FileResponseValue) (-> Unit)
             -> Unit
-            :features :js-ffi
+            :features :io :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.main
           :require (skir.core :as skir) (|node:fs :as fs) (|chalk :default chalk)
@@ -439,7 +439,7 @@
               when-not (empty? extra) (eprintln "|Unknown configuration keys:" extra)
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (Map Tag T) (Set Tag) (-> Unit) (:generics T)
+          :schema $ quote $ Fn (Map Tag T) (Set Tag) (-> Unit) (:generics T) (:features :io)
         'check-method! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn check-method! (value)
             cond
@@ -484,7 +484,7 @@
                   , &unit
               true $ raise "|method must be a Map, Enum or nil"
           :examples $ []
-          :schema $ quote $ Fn Input (-> Unit) (:generics Input)
+          :schema $ quote $ Fn Input (-> Unit) (:generics Input) (:features :io)
         'check-route! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn check-route! (route)
             check-keys! route $ #{} :path :get :post :put :delete :next
@@ -500,7 +500,7 @@
             .foldl (child-routes route) &unit $ fn (_acc child) (check-route! child) &unit
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (Map Tag T) (-> Unit) (:generics T)
+          :schema $ quote $ Fn (Map Tag T) (-> Unit) (:generics T) (:features :io)
         'decode-config $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-config (input)
             try
@@ -529,6 +529,7 @@
           :schema $ quote $ Fn Input
             -> $ Result Config String
             :generics Input
+            :features :io
           :tests $ [] $ %{} 'TestEntry (:name |port-range)
             :code $ quote $ do
               .each ([] 0 7800 65535)

@@ -1,8 +1,8 @@
 ## Serve JSON
 
-### Calcit 0.41.1 升级
+### Calcit 0.42.1 升级
 
-请配对使用 Calcit CLI 和 `@calcit/procs` 0.41.1，按 `deps.cirru` 安装依赖并重新生成 JS。
+请配对使用 Calcit CLI 和 `@calcit/procs` 0.42.1，按 `deps.cirru` 安装依赖并重新生成 JS。
 现有 JSON、JSON5 和 Cirru EDN 配置、嵌套路由及响应格式继续适用。
 
 路由匹配区分匹配和未匹配两种结果，首页路由列表使用具体的路径和方法字段。
@@ -112,7 +112,7 @@ When `:fallback-host` is specified, it will be used as a default proxy target wh
 
 ### 开发
 
-使用配对的正式 Calcit / `@calcit/procs` 0.37.0、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
+使用配对的正式 Calcit / `@calcit/procs` 0.42.1、caps 0.1.1、Node.js 24 和 Yarn 4.18.0。正式配对的完整验收在 Linux CI 中执行；本地先前 alpha 配对结果不作为正式版验收。npm 与模块版本统一为待发布的 0.0.14，本轮不发布。新解析 npm 包至少发布60分钟，无单包例外；原锁文件按 immutable 安装。安装依赖后检查并编译 CLI：
 
 ```bash
 caps --strict --ci
