@@ -8,6 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { setTimeout as pause } from 'node:timers/promises'
 import * as c from '../js-out/calcit.core.mjs'
 import * as config from '../js-out/app.config.mjs'
+import { handle_request_$x_ } from '../js-out/app.main.mjs'
+import { create_server_$x_ } from '../js-out/skir.core.mjs'
 
 const entry = fileURLToPath(new URL('../main.mjs', import.meta.url))
 
@@ -59,5 +61,56 @@ test('loads valid config and reloads it through the actual Node file watcher', {
     process.argv = previousArgv
     c.reset_$x_(config._$s_configs, previousConfig)
     rmSync(cwd, { recursive: true })
+  }
+})
+
+
+test('serves file replies through the existing Skir HTTP adapter', { timeout: 10000 }, async () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'serve-json-file-reply-'))
+  const previousConfig = c.deref(config._$s_configs)
+  let server
+  try {
+    writeFileSync(join(cwd, 'valid.json'), '{answer: 42}')
+    writeFileSync(join(cwd, 'invalid.json'), '{')
+    const path = join(cwd, 'config.json')
+    writeFileSync(path, JSON.stringify({
+      port: 0,
+      routes: ['valid', 'missing', 'invalid'].map(name => ({
+        path: name,
+        get: { type: 'file', file: join(cwd, name + '.json'), code: 202 },
+      })),
+    }))
+    assert.equal(config.load_config_from_file_$x_(path), true)
+    const options = c._PCT__$o__$o_(c.Option, c.to_tag('some'),
+      c._$n__$M_(c.to_tag('port'), 0, c.to_tag('host'), '127.0.0.1'))
+    server = create_server_$x_(handle_request_$x_, options)
+    if (!server.listening) {
+      await new Promise((resolve, reject) => {
+        server.once('listening', resolve)
+        server.once('error', reject)
+      })
+    }
+    const base = 'http://127.0.0.1:' + server.address().port
+    const request = name => fetch(base + '/' + name, {
+      headers: { Origin: 'https://example.test' },
+      signal: AbortSignal.timeout(5000),
+    })
+    const valid = await request('valid')
+    assert.equal(valid.status, 202)
+    assert.equal(valid.headers.get('access-control-allow-origin'), 'https://example.test')
+    assert.deepEqual(await valid.json(), { answer: 42 })
+    const missing = await request('missing')
+    assert.equal(missing.status, 404)
+    assert.match(await missing.text(), /missing\.json not found/)
+    const invalid = await request('invalid')
+    assert.equal(invalid.status, 500)
+    assert.match((await invalid.json()).msg, /invalid end of input/)
+  } finally {
+    try {
+      if (server?.listening) await new Promise(resolve => server.close(resolve))
+    } finally {
+      c.reset_$x_(config._$s_configs, previousConfig)
+      rmSync(cwd, { recursive: true })
+    }
   }
 })
