@@ -123,6 +123,12 @@
           :code $ quote $ defstruct FileMethod (:path String) (:code Number) (:delay Number)
           :examples $ []
           :schema $ quote StructDef
+        'FileReply $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct FileReply (:code Number) (:message String)
+            :headers $ Map Tag String
+            :body String
+          :examples $ []
+          :schema $ quote StructDef
         'FileResponseValue $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defunion FileResponseValue Number String (Map Tag String)
           :examples $ []
@@ -244,7 +250,12 @@
                         hint-fn $ Fn
                           Fn (Map Tag FileResponseValue) (-> Unit)
                           -> Unit
-                        respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header send!
+                        respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header $ fn (reply)
+                          send! $ {}
+                            :code $ :code reply
+                            :message $ :message reply
+                            :headers $ :headers reply
+                            :body $ :body reply
                     (:none)
                       if (enum? info)
                         do (eprintln 400 info)
@@ -282,38 +293,36 @@
               hint-fn $ Fn (JsNullish JsObject) (-> Unit) (:features :js-ffi)
               if (js-present? err)
                 do (println "|Need file" mock-path)
-                  send! $ {} (:code 404) (:message "|Unknown request")
-                    :headers $ .merge cors-header schema/html-header
-                    :body $ str mock-path "| not found"
+                  send! $ FileReply :code 404 :message "|Unknown request" :headers (.merge cors-header schema/html-header) :body $ str mock-path "| not found"
                 do
                   println $ .gray (chalk-host) (str |sending "| " mock-path "| to " pathname)
                   delay! delay $ fn ()
                     fs/readFile mock-path |utf8 $ fn (err content)
                       try
-                        send! $ {} (:code code) (:message |OK)
-                          :headers $ .merge cors-header schema/json-header
-                          :body $ decode-map-as
-                            js/JSON.stringify
-                              .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
-                              , nil 2
-                            , String
-                        fn (e)
-                          shared/console-error! $ str e
-                          send! $ {} (:code 500) (:message |Error)
-                            :headers $ .merge cors-header schema/json-header
-                            :body $ decode-map-as
+                        let
+                            body $ decode-map-as
                               js/JSON.stringify
-                                js-object (:message |Error)
-                                  :msg $ str e
-                                  :error e
+                                .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
                                 , nil 2
                               , String
+                          send! $ FileReply :code code :message |OK :headers (.merge cors-header schema/json-header) :body body
+                        fn (e)
+                          shared/console-error! $ str e
+                          let
+                              body $ decode-map-as
+                                js/JSON.stringify
+                                  js-object (:message |Error)
+                                    :msg $ str e
+                                    :error e
+                                  , nil 2
+                                , String
+                            send! $ FileReply :code 500 :message |Error :headers (.merge cors-header schema/json-header) :body body
                     , &unit
               , &unit
             , &unit
           :examples $ []
           :schema $ quote $ Fn String String Number Number (Map Tag String)
-            Fn (Map Tag FileResponseValue) (-> Unit)
+            Fn FileReply $ -> Unit
             -> Unit
             :features :io :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
