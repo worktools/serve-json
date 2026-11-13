@@ -65,7 +65,7 @@ test('loads valid config and reloads it through the actual Node file watcher', {
 })
 
 
-test('serves file replies through the existing Skir HTTP adapter', { timeout: 10000 }, async () => {
+test('serves immediate and file replies through the existing Skir HTTP adapter', { timeout: 10000 }, async () => {
   const cwd = mkdtempSync(join(tmpdir(), 'serve-json-file-reply-'))
   const previousConfig = c.deref(config._$s_configs)
   let server
@@ -95,6 +95,17 @@ test('serves file replies through the existing Skir HTTP adapter', { timeout: 10
       headers: { Origin: 'https://example.test' },
       signal: AbortSignal.timeout(5000),
     })
+    const index = await request('')
+    assert.equal(index.status, 200)
+    assert.equal((await index.json()).message, 'This is a data mocking server.')
+    const unmatched = await request('unmatched')
+    assert.equal(unmatched.status, 400)
+    assert.equal(unmatched.statusText, 'Not matching')
+    assert.match((await unmatched.json()).message, /No matching path for/)
+    const favicon = await fetch(base + '/favicon.ico', { redirect: 'manual' })
+    assert.equal(favicon.status, 301)
+    assert.match(favicon.headers.get('location'), /jimeng-360x360\.png$/)
+
     const valid = await request('valid')
     assert.equal(valid.status, 202)
     assert.equal(valid.headers.get('access-control-allow-origin'), 'https://example.test')
