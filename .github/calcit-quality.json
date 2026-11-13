@@ -2,7 +2,6 @@
   "coverage": {
     "app.main/handle-request!": "partial",
     "app.path/child-routes": "partial",
-    "app.path/find-match-rule": "partial",
     "app.path/list-paths": "partial"
   },
   "weak": {
@@ -20,9 +19,6 @@
       "code-nil/unresolved": 2
     },
     "app.path/child-routes": {
-      "schema-dynamic/unresolved": 1
-    },
-    "app.path/find-match-rule": {
       "schema-dynamic/unresolved": 1
     },
     "app.path/list-paths": {
