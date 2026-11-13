@@ -363,15 +363,10 @@
                 candidates rules
               match (destruct-list candidates)
                 (:none)
-                  RouteMatch :missing segments $ map rules $ fn (rule)
-                    decode-map-as
-                      .unwrap-or (get rule :path) |
-                      , 'String
+                  RouteMatch :missing segments $ map rules read-route-path
                 (:some rule more)
                   let
-                      rule-path $ decode-map-as
-                        .unwrap-or (get rule :path) |
-                        , 'String
+                      rule-path $ read-route-path rule
                     match
                       match-path segments $ split-path rule-path
                       (:none) (recur more)
@@ -380,8 +375,9 @@
                           find-match-rule remaining $ child-routes rule
           :examples $ []
           :schema $ quote $ Fn (List String)
-            List $ Map Tag Dynamic
+            List $ Map Tag V
             -> RouteMatch
+            :generics V
         'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn letter-number-pattern ()
             js-cast (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
@@ -393,9 +389,7 @@
               hint-fn $ Fn (Map Tag V)
                 -> $ List PathChoice
               let
-                  path $ match (get rule :path)
-                    (:none) |
-                    (:some value) (decode-map-as value 'String)
+                  path $ read-route-path rule
                   methods $ &set:to-list $ exclude (keys rule) :path :next
                 concat
                   [] $ PathChoice :path path :methods methods
@@ -427,6 +421,13 @@
           :schema $ quote $ Fn (List String) (List String)
             -> $ Option $ List String
             :features :js-ffi
+        'read-route-path $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn read-route-path (rule)
+            match (get rule :path)
+              (:none) |
+              (:some value) (decode-map-as value 'String)
+          :examples $ []
+          :schema $ quote $ Fn (Map Tag V) (-> String) (:generics V)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.path
           :require $ app.util :refer $ split-path
