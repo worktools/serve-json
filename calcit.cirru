@@ -268,7 +268,14 @@
                       , RequestOutcome
                 true $ let
                     info $ .unwrap method-info
-                  match (decode-file-method info)
+                  match
+                    match rule-result
+                      (:found rule)
+                        if
+                          contains? (#{} :get :post :put :delete) request-method
+                          get (:file-methods rule) request-method
+                          decode-file-method info
+                      (:missing _ _) None
                     (:some file)
                       assert-type
                         fn (send!)
@@ -569,11 +576,18 @@
                 (:none) &unit
                 (:some method) (check-method! method)
               , &unit
-            app.schema/Route :path
-              decode-map-as
-                .unwrap $ get route :path
-                , String
-              , :raw route :children $ map (child-routes route) decode-route
+            let
+                file-methods $ .foldl ([] :get :post :put :delete) ({})
+                  fn (methods key)
+                    match
+                      .and-then (get route key) app.main/decode-file-method
+                      (:some method) (assoc methods key method)
+                      (:none) methods
+              app.schema/Route :path
+                decode-map-as
+                  .unwrap $ get route :path
+                  , String
+                , :raw route :file-methods file-methods :children $ map (child-routes route) decode-route
           :examples $ []
           :schema $ quote $ Fn (Map Tag Field) (-> app.schema/Route) (:generics Field) (:features :io)
       :ns $ %{} 'NsEntry (:doc |)
@@ -593,6 +607,7 @@
           :code $ quote $ defstruct Route (:path String)
             :raw $ Map Tag Dynamic
             :children $ List app.schema/Route
+            :file-methods $ Map Tag app.main/FileMethod
           :examples $ []
           :schema $ quote StructDef
         'default-config $ %{} 'CodeEntry (:doc |)
