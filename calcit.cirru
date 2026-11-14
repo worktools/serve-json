@@ -570,19 +570,16 @@
         'decode-route $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-route (route)
             check-keys! route $ #{} :path :get :post :put :delete :next
-            .foldl ([] :get :post :put :delete) &unit $ fn (_acc key)
-              hint-fn $ Fn Unit Tag $ -> Unit
-              match (get route key)
-                (:none) &unit
-                (:some method) (check-method! method)
-              , &unit
             let
                 file-methods $ .foldl ([] :get :post :put :delete) ({})
                   fn (methods key)
-                    match
-                      .and-then (get route key) app.main/decode-file-method
-                      (:some method) (assoc methods key method)
+                    match (get route key)
                       (:none) methods
+                      (:some raw)
+                        do (check-method! raw)
+                          match (app.main/decode-file-method raw)
+                            (:some method) (assoc methods key method)
+                            (:none) methods
               app.schema/Route :path
                 decode-map-as
                   .unwrap $ get route :path
