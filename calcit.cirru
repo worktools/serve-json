@@ -575,7 +575,7 @@
                 , String
               , :raw route :children $ map (child-routes route) decode-route
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) (-> app.schema/Route) (:features :io)
+          :schema $ quote $ Fn (Map Tag Field) (-> app.schema/Route) (:generics Field) (:features :io)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.router
           :require
