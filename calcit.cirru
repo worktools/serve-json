@@ -153,6 +153,11 @@
               -> Unit
           :examples $ []
           :schema $ quote UnionDef
+        'RouteMethod $ %{} 'CodeEntry
+          :doc "|Distinguish missing methods, checked file handlers and raw diagnostic input."
+          :code $ quote $ defenum RouteMethod (:missing) (:file FileMethod) (:unknown Dynamic)
+          :examples $ []
+          :schema $ quote EnumDef
         'checked-response $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn checked-response (response)
             decode-map-as response $ Map Tag FileResponseValue
@@ -212,14 +217,9 @@
                   , |
                 segments $ split-path pathname
                 rule-result $ find-match-rule segments routes
-                method-info $ match rule-result
-                  (:found rule)
-                    get (:raw rule) request-method
-                  (:missing _ _) None
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
                   :Access-Control-Allow-Headers |Content-Type
-              ; println "|find rule" pathname rule-result method-info request-method
               cond
                   = pathname |/
                   assert-type
@@ -240,80 +240,107 @@
                     checked-response $ {} (:code 301)
                       :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
                     , RequestOutcome
-                (not (match method-info ((:some value) (non-nil? value)) ((:none) false)))
-                  if (not= fallback-host |)
-                    do
-                      println $ .gray (chalk-host) (str "|proxy to " fallback-host "| " pathname)
-                      try
-                        .web @*proxy original-request res $ js-object $ :target fallback-host
-                        fn (err)
-                          {} (:code 500) (:message "|Failed to access fallback host")
-                            :headers $ .merge cors-header schema/json-header
-                            :body err
-                      assert-type :effect RequestOutcome
-                    assert-type
-                      do (println 404 pathname)
-                        checked-response $ {} (:code 400) (:message "|Not matching")
-                          :headers $ .merge cors-header schema/json-header
-                          :body $ js/JSON.stringify
-                            js-object
-                              :message $ str "|No matching path for " pathname
-                              :reason $ match rule-result
-                                (:found rule)
-                                  to-js-data $ {} (:ok? true)
-                                    :rule $ :raw rule
-                                (:missing remaining choices)
-                                  to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
-                            , nil 2
-                      , RequestOutcome
-                true $ let
-                    info $ .unwrap method-info
-                  match
-                    match rule-result
-                      (:found rule)
-                        if
-                          contains? (#{} :get :post :put :delete) request-method
-                          get (:file-methods rule) request-method
-                          decode-file-method info
-                      (:missing _ _) None
-                    (:some file)
+                true $ match (lookup-route-method rule-result request-method)
+                  (:missing)
+                    if (not= fallback-host |)
+                      do
+                        println $ .gray (chalk-host) (str "|proxy to " fallback-host "| " pathname)
+                        try
+                          .web @*proxy original-request res $ js-object $ :target fallback-host
+                          fn (err)
+                            {} (:code 500) (:message "|Failed to access fallback host")
+                              :headers $ .merge cors-header schema/json-header
+                              :body err
+                        assert-type :effect RequestOutcome
                       assert-type
-                        fn (send!)
-                          hint-fn $ Fn
-                            Fn (Map Tag FileResponseValue) (-> Unit)
-                            -> Unit
-                          respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header $ fn (reply)
-                            send! $ {}
-                              :code $ :code reply
-                              :message $ :message reply
-                              :headers $ :headers reply
-                              :body $ :body reply
-                        , RequestOutcome
-                    (:none)
-                      if (enum? info)
-                        assert-type
-                          do (eprintln 400 info)
-                            checked-response $ {} (:code 400) (:message "|Unknown config")
-                              :headers $ .merge cors-header schema/json-header
-                              :body $ js/JSON.stringify
-                                js-object
-                                  :message $ str "|No matching path for " pathname
-                                  :reason $ to-js-data info
-                                , nil 2
-                          , RequestOutcome
-                        assert-type
-                          do (println "|Bad result for rule" pathname request-method info)
-                            checked-response $ {} (:code 400) (:message "|Unknown request")
-                              :headers $ .merge cors-header schema/json-header
-                              :body $ js/JSON.stringify $ js-object (:code 400) (:message "|Unknown rule")
-                                :rule $ match rule-result
+                        do (println 404 pathname)
+                          checked-response $ {} (:code 400) (:message "|Not matching")
+                            :headers $ .merge cors-header schema/json-header
+                            :body $ js/JSON.stringify
+                              js-object
+                                :message $ str "|No matching path for " pathname
+                                :reason $ match rule-result
                                   (:found rule)
-                                    to-js-data $ :raw rule
-                                  (:missing _ _) (js-object)
-                                :info $ to-js-data info
-                          , RequestOutcome
+                                    to-js-data $ {} (:ok? true)
+                                      :rule $ :raw rule
+                                  (:missing remaining choices)
+                                    to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
+                              , nil 2
+                        , RequestOutcome
+                  (:file file)
+                    assert-type
+                      fn (send!)
+                        hint-fn $ Fn
+                          Fn (Map Tag FileResponseValue) (-> Unit)
+                          -> Unit
+                        respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header $ fn (reply)
+                          send! $ {}
+                            :code $ :code reply
+                            :message $ :message reply
+                            :headers $ :headers reply
+                            :body $ :body reply
+                      , RequestOutcome
+                  (:unknown info)
+                    if (enum? info)
+                      assert-type
+                        do (eprintln 400 info)
+                          checked-response $ {} (:code 400) (:message "|Unknown config")
+                            :headers $ .merge cors-header schema/json-header
+                            :body $ js/JSON.stringify
+                              js-object
+                                :message $ str "|No matching path for " pathname
+                                :reason $ to-js-data info
+                              , nil 2
+                        , RequestOutcome
+                      assert-type
+                        do (println "|Bad result for rule" pathname request-method info)
+                          checked-response $ {} (:code 400) (:message "|Unknown request")
+                            :headers $ .merge cors-header schema/json-header
+                            :body $ js/JSON.stringify $ js-object (:code 400) (:message "|Unknown rule")
+                              :rule $ match rule-result
+                                (:found rule)
+                                  to-js-data $ :raw rule
+                                (:missing _ _) (js-object)
+                              :info $ to-js-data info
+                        , RequestOutcome
           :examples $ []
           :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> RequestOutcome) (:features :io :js-ffi :state)
+        'lookup-route-method $ %{} 'CodeEntry
+          :doc "|Use validated standard methods and preserve lazy decoding for extension verbs."
+          :code $ quote $ defn lookup-route-method (result method)
+            match result
+              (:missing _ _) (RouteMethod :missing)
+              (:found rule)
+                match
+                  get (:raw rule) method
+                  (:none) (RouteMethod :missing)
+                  (:some raw)
+                    if (nil? raw) (RouteMethod :missing)
+                      match
+                        if
+                          contains? (#{} :get :post :put :delete) method
+                          get (:file-methods rule) method
+                          decode-file-method raw
+                        (:some file) (RouteMethod :file file)
+                        (:none) (RouteMethod :unknown raw)
+          :examples $ []
+          :schema $ quote $ Fn app.path/RouteMatch Tag (-> RouteMethod)
+          :tests $ [] $ %{} 'TestEntry (:name |classified-legacy-methods)
+            :code $ quote $ let
+                raw $ {} (:path |/example) (:post nil)
+                  :get $ :: :file 202 |fixture.json
+                  :head $ :: :other 400 |legacy
+                route $ app.router/decode-route raw
+                found $ app.path/RouteMatch :found route
+              assert= (RouteMethod :missing) (lookup-route-method found :post)
+              assert= (RouteMethod :missing) (lookup-route-method found :patch)
+              assert=
+                RouteMethod :file $ FileMethod :path |fixture.json :code 202 :delay 0
+                lookup-route-method found :get
+              assert=
+                RouteMethod :unknown $ :: :other 400 |legacy
+                lookup-route-method found :head
+            :tags $ #{} :unit
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (load-console-formatter!)
             when-not (load-config!) (node/exit! 1)
