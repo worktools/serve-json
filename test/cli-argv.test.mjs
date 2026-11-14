@@ -94,7 +94,8 @@ test('serves immediate and file replies through the existing Skir HTTP adapter',
       })
     }
     const base = 'http://127.0.0.1:' + server.address().port
-    const request = name => fetch(base + '/' + name, {
+    const request = (name, method = 'GET') => fetch(base + '/' + name, {
+      method,
       headers: { Origin: 'https://example.test' },
       signal: AbortSignal.timeout(5000),
     })
@@ -113,12 +114,29 @@ test('serves immediate and file replies through the existing Skir HTTP adapter',
     assert.equal(valid.status, 202)
     assert.equal(valid.headers.get('access-control-allow-origin'), 'https://example.test')
     assert.deepEqual(await valid.json(), { answer: 42 })
+
     const missing = await request('nested/missing')
     assert.equal(missing.status, 404)
     assert.match(await missing.text(), /missing\.json not found/)
     const invalid = await request('nested/invalid')
     assert.equal(invalid.status, 500)
     assert.match((await invalid.json()).msg, /invalid end of input/)
+
+    writeFileSync(path, JSON.stringify({
+      port: 0,
+      routes: [{
+        path: 'nested',
+        next: [{
+          path: 'valid',
+          post: { type: 'file', file: join(cwd, 'valid.json'), code: 201 },
+        }],
+      }],
+    }))
+    assert.equal(config.load_config_from_file_$x_(path), true)
+    const replaced = await request('nested/valid', 'POST')
+    assert.equal(replaced.status, 201)
+    assert.deepEqual(await replaced.json(), { answer: 42 })
+    assert.equal((await request('nested/valid')).status, 400)
   } finally {
     try {
       if (server?.listening) await new Promise(resolve => server.close(resolve))
