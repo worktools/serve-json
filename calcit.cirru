@@ -123,6 +123,12 @@
           :code $ quote $ defstruct FileMethod (:path String) (:code Number) (:delay Number)
           :examples $ []
           :schema $ quote StructDef
+        'FileReply $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct FileReply (:code Number) (:message String)
+            :headers $ Map Tag String
+            :body String
+          :examples $ []
+          :schema $ quote StructDef
         'FileResponseValue $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defunion FileResponseValue Number String (Map Tag String)
           :examples $ []
@@ -140,6 +146,20 @@
           :examples $ []
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
+        'RequestOutcome $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion RequestOutcome Tag (Map Tag FileResponseValue)
+            Fn
+              Fn (Map Tag FileResponseValue) (-> Unit)
+              -> Unit
+          :examples $ []
+          :schema $ quote UnionDef
+        'checked-response $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn checked-response (response)
+            decode-map-as response $ Map Tag FileResponseValue
+          :examples $ []
+          :schema $ quote $ Fn Input
+            -> $ Map Tag FileResponseValue
+            :generics Input
         'create-proxy! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-proxy! ()
             .create-proxy! (unsafe-coerce http-proxy 'app.main/HttpProxyFactoryHost) (js-object)
@@ -201,18 +221,24 @@
               ; println "|find rule" pathname rule-result method-info request-method
               cond
                   = pathname |/
-                  {} (:code 200) (:message |OK)
-                    :headers $ .merge cors-header schema/json-header
-                    :body $ js/JSON.stringify
-                      to-js-data $ {}
-                        :message $ str "|This is a data mocking server."
-                        :choices $ encode-map-as (list-paths routes) (List app.path/PathChoice)
-                      , nil 2
+                  assert-type
+                    checked-response $ {} (:code 200) (:message |OK)
+                      :headers $ .merge cors-header schema/json-header
+                      :body $ js/JSON.stringify
+                        to-js-data $ {}
+                          :message $ str "|This is a data mocking server."
+                          :choices $ encode-map-as (list-paths routes) (List app.path/PathChoice)
+                        , nil 2
+                    , RequestOutcome
                 (= :options request-method)
-                  {} (:code 200) (:message |OK) (:headers cors-header) (:body |OK)
+                  assert-type
+                    checked-response $ {} (:code 200) (:message |OK) (:headers cors-header) (:body |OK)
+                    , RequestOutcome
                 (= pathname |/favicon.ico)
-                  {} (:code 301)
-                    :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
+                  assert-type
+                    checked-response $ {} (:code 301)
+                      :headers $ {} $ :Location |http://cdn.tiye.me/logo/jimeng-360x360.png
+                    , RequestOutcome
                 (not (match method-info ((:some value) (non-nil? value)) ((:none) false)))
                   if (not= fallback-host |)
                     do
@@ -223,48 +249,61 @@
                           {} (:code 500) (:message "|Failed to access fallback host")
                             :headers $ .merge cors-header schema/json-header
                             :body err
-                      , :effect
-                    do (println 404 pathname)
-                      {} (:code 400) (:message "|Not matching")
-                        :headers $ .merge cors-header schema/json-header
-                        :body $ js/JSON.stringify
-                          js-object
-                            :message $ str "|No matching path for " pathname
-                            :reason $ match rule-result
-                              (:found rule)
-                                to-js-data $ {} (:ok? true) (:rule rule)
-                              (:missing remaining choices)
-                                to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
-                          , nil 2
+                      assert-type :effect RequestOutcome
+                    assert-type
+                      do (println 404 pathname)
+                        checked-response $ {} (:code 400) (:message "|Not matching")
+                          :headers $ .merge cors-header schema/json-header
+                          :body $ js/JSON.stringify
+                            js-object
+                              :message $ str "|No matching path for " pathname
+                              :reason $ match rule-result
+                                (:found rule)
+                                  to-js-data $ {} (:ok? true) (:rule rule)
+                                (:missing remaining choices)
+                                  to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
+                            , nil 2
+                      , RequestOutcome
                 true $ let
                     info $ .unwrap method-info
                   match (decode-file-method info)
                     (:some file)
-                      fn (send!)
-                        hint-fn $ Fn
-                          Fn (Map Tag FileResponseValue) (-> Unit)
-                          -> Unit
-                        respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header send!
+                      assert-type
+                        fn (send!)
+                          hint-fn $ Fn
+                            Fn (Map Tag FileResponseValue) (-> Unit)
+                            -> Unit
+                          respond-with-file! (:path file) pathname (:code file) (:delay file) cors-header $ fn (reply)
+                            send! $ {}
+                              :code $ :code reply
+                              :message $ :message reply
+                              :headers $ :headers reply
+                              :body $ :body reply
+                        , RequestOutcome
                     (:none)
                       if (enum? info)
-                        do (eprintln 400 info)
-                          {} (:code 400) (:message "|Unknown config")
-                            :headers $ .merge cors-header schema/json-header
-                            :body $ js/JSON.stringify
-                              js-object
-                                :message $ str "|No matching path for " pathname
-                                :reason $ to-js-data info
-                              , nil 2
-                        do (println "|Bad result for rule" pathname request-method info)
-                          {} (:code 400) (:message "|Unknown request")
-                            :headers $ .merge cors-header schema/json-header
-                            :body $ js-object (:code 400) (:message "|Unknown rule")
-                              :rule $ match rule-result
-                                (:found rule) (to-js-data rule)
-                                (:missing _ _) (js-object)
-                              :info $ to-js-data info
+                        assert-type
+                          do (eprintln 400 info)
+                            checked-response $ {} (:code 400) (:message "|Unknown config")
+                              :headers $ .merge cors-header schema/json-header
+                              :body $ js/JSON.stringify
+                                js-object
+                                  :message $ str "|No matching path for " pathname
+                                  :reason $ to-js-data info
+                                , nil 2
+                          , RequestOutcome
+                        assert-type
+                          do (println "|Bad result for rule" pathname request-method info)
+                            checked-response $ {} (:code 400) (:message "|Unknown request")
+                              :headers $ .merge cors-header schema/json-header
+                              :body $ js/JSON.stringify $ js-object (:code 400) (:message "|Unknown rule")
+                                :rule $ match rule-result
+                                  (:found rule) (to-js-data rule)
+                                  (:missing _ _) (js-object)
+                                :info $ to-js-data info
+                          , RequestOutcome
           :examples $ []
-          :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> Dynamic) (:features :io :js-ffi :state)
+          :schema $ quote $ Fn skir.schema/Request node/NodeServerResponseHost (-> RequestOutcome) (:features :io :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (load-console-formatter!)
             when-not (load-config!) (node/exit! 1)
@@ -282,38 +321,36 @@
               hint-fn $ Fn (JsNullish JsObject) (-> Unit) (:features :js-ffi)
               if (js-present? err)
                 do (println "|Need file" mock-path)
-                  send! $ {} (:code 404) (:message "|Unknown request")
-                    :headers $ .merge cors-header schema/html-header
-                    :body $ str mock-path "| not found"
+                  send! $ FileReply :code 404 :message "|Unknown request" :headers (.merge cors-header schema/html-header) :body $ str mock-path "| not found"
                 do
                   println $ .gray (chalk-host) (str |sending "| " mock-path "| to " pathname)
                   delay! delay $ fn ()
                     fs/readFile mock-path |utf8 $ fn (err content)
                       try
-                        send! $ {} (:code code) (:message |OK)
-                          :headers $ .merge cors-header schema/json-header
-                          :body $ decode-map-as
-                            js/JSON.stringify
-                              .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
-                              , nil 2
-                            , String
-                        fn (e)
-                          shared/console-error! $ str e
-                          send! $ {} (:code 500) (:message |Error)
-                            :headers $ .merge cors-header schema/json-header
-                            :body $ decode-map-as
+                        let
+                            body $ decode-map-as
                               js/JSON.stringify
-                                js-object (:message |Error)
-                                  :msg $ str e
-                                  :error e
+                                .parse (js-cast JSON5 'app.config/Json5ParserHost) (decode-map-as content 'String)
                                 , nil 2
                               , String
+                          send! $ FileReply :code code :message |OK :headers (.merge cors-header schema/json-header) :body body
+                        fn (e)
+                          shared/console-error! $ str e
+                          let
+                              body $ decode-map-as
+                                js/JSON.stringify
+                                  js-object (:message |Error)
+                                    :msg $ str e
+                                    :error e
+                                  , nil 2
+                                , String
+                            send! $ FileReply :code 500 :message |Error :headers (.merge cors-header schema/json-header) :body body
                     , &unit
               , &unit
             , &unit
           :examples $ []
           :schema $ quote $ Fn String String Number Number (Map Tag String)
-            Fn (Map Tag FileResponseValue) (-> Unit)
+            Fn FileReply $ -> Unit
             -> Unit
             :features :io :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
