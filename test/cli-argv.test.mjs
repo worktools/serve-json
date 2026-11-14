@@ -75,10 +75,13 @@ test('serves immediate and file replies through the existing Skir HTTP adapter',
     const path = join(cwd, 'config.json')
     writeFileSync(path, JSON.stringify({
       port: 0,
-      routes: ['valid', 'missing', 'invalid'].map(name => ({
-        path: name,
-        get: { type: 'file', file: join(cwd, name + '.json'), code: 202 },
-      })),
+      routes: [{
+        path: 'nested',
+        next: ['valid', 'missing', 'invalid'].map(name => ({
+          path: name,
+          get: { type: 'file', file: join(cwd, name + '.json'), code: 202 },
+        })),
+      }],
     }))
     assert.equal(config.load_config_from_file_$x_(path), true)
     const options = c._PCT__$o__$o_(c.Option, c.to_tag('some'),
@@ -106,14 +109,14 @@ test('serves immediate and file replies through the existing Skir HTTP adapter',
     assert.equal(favicon.status, 301)
     assert.match(favicon.headers.get('location'), /jimeng-360x360\.png$/)
 
-    const valid = await request('valid')
+    const valid = await request('nested/valid')
     assert.equal(valid.status, 202)
     assert.equal(valid.headers.get('access-control-allow-origin'), 'https://example.test')
     assert.deepEqual(await valid.json(), { answer: 42 })
-    const missing = await request('missing')
+    const missing = await request('nested/missing')
     assert.equal(missing.status, 404)
     assert.match(await missing.text(), /missing\.json not found/)
-    const invalid = await request('invalid')
+    const invalid = await request('nested/invalid')
     assert.equal(invalid.status, 500)
     assert.match((await invalid.json()).msg, /invalid end of input/)
   } finally {

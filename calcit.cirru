@@ -213,7 +213,8 @@
                 segments $ split-path pathname
                 rule-result $ find-match-rule segments routes
                 method-info $ match rule-result
-                  (:found rule) (get rule request-method)
+                  (:found rule)
+                    get (:raw rule) request-method
                   (:missing _ _) None
                 cors-header $ {} (:Access-Control-Allow-Credentials |true) (:Access-Control-Allow-Methods |PUT,POST,DELETE)
                   :Access-Control-Allow-Origin $ .unwrap-or (node/request-header original-request |origin) |
@@ -259,7 +260,8 @@
                               :message $ str "|No matching path for " pathname
                               :reason $ match rule-result
                                 (:found rule)
-                                  to-js-data $ {} (:ok? true) (:rule rule)
+                                  to-js-data $ {} (:ok? true)
+                                    :rule $ :raw rule
                                 (:missing remaining choices)
                                   to-js-data $ {} (:ok? false) (:segments remaining) (:choices choices)
                             , nil 2
@@ -298,7 +300,8 @@
                               :headers $ .merge cors-header schema/json-header
                               :body $ js/JSON.stringify $ js-object (:code 400) (:message "|Unknown rule")
                                 :rule $ match rule-result
-                                  (:found rule) (to-js-data rule)
+                                  (:found rule)
+                                    to-js-data $ :raw rule
                                   (:missing _ _) (js-object)
                                 :info $ to-js-data info
                           , RequestOutcome
@@ -378,8 +381,7 @@
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
         'RouteMatch $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defenum RouteMatch
-            :found $ Map Tag Dynamic
+          :code $ quote $ defenum RouteMatch (:found app.schema/Route)
             :missing (List String) (List String)
           :examples $ []
           :schema $ quote EnumDef
@@ -400,21 +402,18 @@
                 candidates rules
               match (destruct-list candidates)
                 (:none)
-                  RouteMatch :missing segments $ map rules read-route-path
+                  RouteMatch :missing segments $ map rules $ fn (rule) (:path rule)
                 (:some rule more)
                   let
-                      rule-path $ read-route-path rule
+                      rule-path $ :path rule
                     match
                       match-path segments $ split-path rule-path
                       (:none) (recur more)
                       (:some remaining)
                         if (empty? remaining) (RouteMatch :found rule)
-                          find-match-rule remaining $ child-routes rule
+                          find-match-rule remaining $ :children rule
           :examples $ []
-          :schema $ quote $ Fn (List String)
-            List $ Map Tag V
-            -> RouteMatch
-            :generics V
+          :schema $ quote $ Fn (List String) (List app.schema/Route) (-> RouteMatch)
         'letter-number-pattern $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn letter-number-pattern ()
             js-cast (new js/RegExp |\{[\w\d\-]+\}) 'app.path/RegExpHost
@@ -423,23 +422,22 @@
         'list-paths $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn list-paths (routes)
             -> routes $ mapcat $ fn (rule)
-              hint-fn $ Fn (Map Tag V)
-                -> $ List PathChoice
+              hint-fn $ Fn app.schema/Route $ -> (List PathChoice)
               let
-                  path $ read-route-path rule
-                  methods $ &set:to-list $ exclude (keys rule) :path :next
+                  path $ :path rule
+                  methods $ &set:to-list $ exclude
+                    keys $ :raw rule
+                    , :path :next
                 concat
                   [] $ PathChoice :path path :methods methods
                   map
-                    list-paths $ child-routes rule
+                    list-paths $ :children rule
                     fn (child)
                       hint-fn $ Fn PathChoice $ -> PathChoice
                       struct-with child $ :path $ str path |/ (:path child)
           :examples $ []
-          :schema $ quote $ Fn
-            List $ Map Tag V
+          :schema $ quote $ Fn (List app.schema/Route)
             -> $ List PathChoice
-            :generics V
         'match-path $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn match-path (segments rule-path)
             if (empty? rule-path) (Some segments)
@@ -458,13 +456,6 @@
           :schema $ quote $ Fn (List String) (List String)
             -> $ Option $ List String
             :features :js-ffi
-        'read-route-path $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn read-route-path (rule)
-            match (get rule :path)
-              (:none) |
-              (:some value) (decode-map-as value 'String)
-          :examples $ []
-          :schema $ quote $ Fn (Map Tag V) (-> String) (:generics V)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.path
           :require $ app.util :refer $ split-path
@@ -523,22 +514,6 @@
               true $ raise "|method must be a Map, Enum or nil"
           :examples $ []
           :schema $ quote $ Fn Input (-> Unit) (:generics Input) (:features :io)
-        'check-route! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn check-route! (route)
-            check-keys! route $ #{} :path :get :post :put :delete :next
-            decode-map-as
-              .unwrap $ get route :path
-              , 'String
-            .foldl ([] :get :post :put :delete) &unit $ fn (_acc key)
-              hint-fn $ Fn Unit Tag $ -> Unit
-              match (get route key)
-                (:none) &unit
-                (:some method) (check-method! method)
-              , &unit
-            .foldl (child-routes route) &unit $ fn (_acc child) (check-route! child) &unit
-            , &unit
-          :examples $ []
-          :schema $ quote $ Fn (Map Tag T) (-> Unit) (:generics T) (:features :io)
         'decode-config $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-config (input)
             try
@@ -559,8 +534,7 @@
                   and (.integer? port) (>= port 0) (<= port 65535)
                   raise "|port must be an integer between 0 and 65535"
                 check-keys! raw $ #{} :port :fallback-host :routes
-                .foldl routes &unit $ fn (_acc route) (check-route! route) &unit
-                Result :ok $ Config :port port :fallback-host fallback :routes routes
+                Result :ok $ Config :port port :fallback-host fallback :routes $ map routes decode-route
               fn (error)
                 Result :err $ str error
           :examples $ []
@@ -586,6 +560,22 @@
                     (:ok config) (raise "|invalid port accepted")
                     (:err message)
                       assert= true $ .includes? message |port
+        'decode-route $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-route (route)
+            check-keys! route $ #{} :path :get :post :put :delete :next
+            .foldl ([] :get :post :put :delete) &unit $ fn (_acc key)
+              hint-fn $ Fn Unit Tag $ -> Unit
+              match (get route key)
+                (:none) &unit
+                (:some method) (check-method! method)
+              , &unit
+            app.schema/Route :path
+              decode-map-as
+                .unwrap $ get route :path
+                , String
+              , :raw route :children $ map (child-routes route) decode-route
+          :examples $ []
+          :schema $ quote $ Fn (Map Tag Field) (-> app.schema/Route) (:generics Field) (:features :io)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.router
           :require
@@ -596,7 +586,13 @@
       :defs $ {}
         'Config $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Config (:port Number) (:fallback-host String)
-            :routes $ List $ Map Tag Dynamic
+            :routes $ List app.schema/Route
+          :examples $ []
+          :schema $ quote StructDef
+        'Route $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Route (:path String)
+            :raw $ Map Tag Dynamic
+            :children $ List app.schema/Route
           :examples $ []
           :schema $ quote StructDef
         'default-config $ %{} 'CodeEntry (:doc |)
