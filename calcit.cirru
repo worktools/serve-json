@@ -590,6 +590,15 @@
                 , :raw route :file-methods file-methods :children $ map (child-routes route) decode-route
           :examples $ []
           :schema $ quote $ Fn (Map Tag Field) (-> app.schema/Route) (:generics Field) (:features :io)
+          :tests $ [] $ %{} 'TestEntry (:name |legacy-file-method-and-nil)
+            :code $ quote $ let
+                route $ decode-route $ {} (:path |legacy) (:post nil)
+                  :get $ :: :file 202 |fixture.json
+              assert= None $ get (:file-methods route) :post
+              assert=
+                Some $ app.main/FileMethod :path |fixture.json :code 202 :delay 0
+                get (:file-methods route) :get
+            :tags $ #{} :unit
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.router
           :require
