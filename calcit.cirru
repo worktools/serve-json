@@ -419,17 +419,6 @@
             :missing (List String) (List String)
           :examples $ []
           :schema $ quote EnumDef
-        'child-routes $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn child-routes (rule)
-            match (get rule :next)
-              (:none) ([])
-              (:some value)
-                if (nil? value) ([])
-                  decode-map-as value $ List $ Map Tag Dynamic
-          :examples $ []
-          :schema $ quote $ Fn (Map Tag T)
-            -> $ List $ Map Tag Dynamic
-            :generics T
         'find-match-rule $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn find-match-rule (segments rules)
             loop
@@ -548,6 +537,20 @@
               true $ raise "|method must be a Map, Enum or nil"
           :examples $ []
           :schema $ quote $ Fn Input (-> Unit) (:generics Input) (:features :io)
+        'child-routes $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn child-routes (rule)
+            match (get rule :next)
+              (:none) ([])
+              (:some value)
+                if (nil? value) ([])
+                  map
+                    decode-map-as value $ List $ Map Tag Dynamic
+                    , decode-route
+          :examples $ []
+          :schema $ quote $ Fn (Map Tag T)
+            -> $ List app.schema/Route
+            :generics T
+            :features :io
         'decode-config $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-config (input)
             try
@@ -611,7 +614,7 @@
                 decode-map-as
                   .unwrap $ get route :path
                   , String
-                , :raw route :file-methods file-methods :children $ map (child-routes route) decode-route
+                , :raw route :file-methods file-methods :children $ child-routes route
           :examples $ []
           :schema $ quote $ Fn (Map Tag Field) (-> app.schema/Route) (:generics Field) (:features :io)
           :tests $ [] $ %{} 'TestEntry (:name |legacy-file-method-and-nil)
@@ -628,7 +631,6 @@
           :require
             app.schema :refer $ Config
             app.util :refer $ file?
-            app.path :refer $ child-routes
     'app.schema $ %{} 'FileEntry
       :defs $ {}
         'Config $ %{} 'CodeEntry (:doc |)
