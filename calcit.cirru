@@ -344,8 +344,10 @@
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! () (load-console-formatter!)
             when-not (load-config!) (node/exit! 1)
-            skir/create-server! handle-request! $ Some $ {}
-              :port $ :port $ .unwrap-or @*configs schema/default-config
+            skir/create-server!
+              fn (req res) (handle-request! req res)
+              Some $ {} $ :port
+                :port $ .unwrap-or @*configs schema/default-config
           :examples $ []
           :schema $ quote $ Fn (-> node/NodeServerHost) (:features :io :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
