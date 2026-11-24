@@ -41,7 +41,7 @@
           :ffi $ {} (:backend :js) (:kind :external-object)
           :schema $ quote Trait
         'chalk-host $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn chalk-host () (unsafe-coerce chalk 'app.config/ChalkHost)
+          :code $ quote $ defn chalk-host () (js-cast chalk 'app.config/ChalkHost)
           :examples $ []
           :schema $ quote $ Fn (-> ChalkHost) (:features :js-ffi)
         'detect-config-file! $ %{} 'CodeEntry (:doc |)
@@ -167,7 +167,7 @@
             :generics Input
         'create-proxy! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-proxy! ()
-            .create-proxy! (unsafe-coerce http-proxy 'app.main/HttpProxyFactoryHost) (js-object)
+            .create-proxy! (js-cast http-proxy 'app.main/HttpProxyFactoryHost) (js-object)
           :examples $ []
           :schema $ quote $ Fn (-> ProxyHost) (:features :js-ffi)
         'decode-file-method $ %{} 'CodeEntry (:doc |)
