@@ -1,5 +1,5 @@
 
-{} (:calcit-version |0.44.0)
+{} (:calcit-version |0.45.1)
   :version |0.0.14
-  :dependencies $ {} (|calcit-lang/skir |0.0.43)
-    |calcit-lang/js-ffi |0.2.19
+  :dependencies $ {} (|calcit-lang/skir |0.0.44)
+    |calcit-lang/js-ffi |0.2.24
