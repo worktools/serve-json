@@ -198,11 +198,32 @@
           :code $ quote $ defn file-method (path code delay)
             let
                 filename $ decode-map-as path 'String
-                status $ decode-map-as (or code 200) Number
-                timeout $ decode-map-as (or delay 0) Number
+                status $ decode-map-as
+                  if
+                    or (nil? code)
+                      and (bool? code)
+                        not $ decode-map-as code Bool
+                    , 200 code
+                  , Number
+                timeout $ decode-map-as
+                  if
+                    or (nil? delay)
+                      and (bool? delay)
+                        not $ decode-map-as delay Bool
+                    , 0 delay
+                  , Number
               FileMethod :path filename :code status :delay timeout
           :examples $ []
           :schema $ quote $ Fn Path Code Delay (-> FileMethod) (:generics Path Code Delay)
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-legacy-defaults)
+            :code $ quote $ do
+              assert= 202 $ :code $ file-method |fixture.json 202 7
+              assert= 7 $ :delay $ file-method |fixture.json 202 7
+              assert= 0 $ :code $ file-method |fixture.json 0 0
+              assert= 200 $ :code $ file-method |fixture.json nil nil
+              assert= 200 $ :code $ file-method |fixture.json false false
+              assert= 0 $ :delay $ file-method |fixture.json false false
+            :tags $ #{} :unit
         'handle-request! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn handle-request! (req res)
             let
