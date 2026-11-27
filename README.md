@@ -1,8 +1,8 @@
 ## Serve JSON
 
-### Calcit 0.45.1 升级
+### Calcit 0.46.0 升级
 
-请配对使用 Calcit CLI 和 `@calcit/procs` 0.45.1，按 `deps.cirru` 安装依赖并重新生成 JS。
+候选源码配对 Calcit CLI 和 `@calcit/procs` 0.46.0，按 `deps.cirru` 安装依赖并重新生成 JS；0.0.14 尚未发布正式版。当前使用正式 Skir 0.0.44 与 JS-FFI 0.2.24 的一致依赖图，待 Skir 的新依赖链发布后继续升级。
 现有 JSON、JSON5 和 Cirru EDN 配置、嵌套路由及响应格式继续适用。
 
 路由匹配区分匹配和未匹配两种结果，首页路由列表使用具体的路径和方法字段。
